@@ -55,6 +55,7 @@ export interface MatchBuffer {
   startTime: number;
   localPlayerName: string | null;
   localPlayerTeam: number;
+  playlist: string;
   stateSamples: StateSample[];
   statfeedEvents: StatfeedEntry[];
   goals: GoalEntry[];
@@ -129,6 +130,7 @@ export class MatchCollector extends EventEmitter {
       startTime: Date.now(),
       localPlayerName: null,
       localPlayerTeam: 0,
+      playlist: 'default',
       stateSamples: [],
       statfeedEvents: [],
       goals: [],
@@ -146,6 +148,18 @@ export class MatchCollector extends EventEmitter {
     if (!buf.localPlayerName && payload.Game.bHasTarget && payload.Game.Target) {
       buf.localPlayerName = payload.Game.Target.Name;
       buf.localPlayerTeam = payload.Game.Target.TeamNum;
+    }
+
+    // Detect playlist from max players per team (first time only)
+    if (buf.playlist === 'default' && payload.Players.length > 0) {
+      const perTeam = new Map<number, number>();
+      for (const p of payload.Players) {
+        perTeam.set(p.TeamNum, (perTeam.get(p.TeamNum) ?? 0) + 1);
+      }
+      const maxPerTeam = Math.max(...perTeam.values());
+      if (maxPerTeam === 1) buf.playlist = 'ranked_duels';
+      else if (maxPerTeam === 2) buf.playlist = 'ranked_doubles';
+      else if (maxPerTeam >= 3) buf.playlist = 'ranked_standard';
     }
 
     const sample: StateSample = {

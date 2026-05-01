@@ -32,6 +32,7 @@ export interface HistoricalAverages {
 }
 
 export interface Baselines {
+  label: string;
   shooting_pct: number;
   boost_starvation_pct: number;
   saves_per_match: number;
@@ -73,7 +74,7 @@ export const shootingEfficiency: InsightRule = (stats, history, baselines) => {
   return {
     id: 'shooting_efficiency',
     title,
-    description: `${stats.shots} disparos, ${stats.goals} gol${stats.goals !== 1 ? 'es' : ''} (${pct(ratio)})${histLine} · SSL: ~${pct(sslRatio)}`,
+    description: `${stats.shots} disparos, ${stats.goals} gol${stats.goals !== 1 ? 'es' : ''} (${pct(ratio)})${histLine} · ${baselines.label}: ~${pct(sslRatio)}`,
     verdict,
     delta: Math.abs(delta),
   };
@@ -105,7 +106,7 @@ export const boostStarvation: InsightRule = (stats, history, baselines) => {
   return {
     id: 'boost_starvation',
     title,
-    description: `${pct(ratio)} del partido con menos de 25 boost${histLine} · SSL: ~${pct(sslRatio)}`,
+    description: `${pct(ratio)} del partido con menos de 25 boost${histLine} · ${baselines.label}: ~${pct(sslRatio)}`,
     verdict,
     delta: Math.abs(delta),
   };
@@ -134,7 +135,7 @@ export const passivity: InsightRule = (stats, history, baselines) => {
   return {
     id: 'passivity',
     title,
-    description: `${touchesPerMin.toFixed(1)} toques/min · Tu promedio: ${histTpm.toFixed(1)} · SSL: ~${baselines.touches_per_min}`,
+    description: `${touchesPerMin.toFixed(1)} toques/min · Tu promedio: ${histTpm.toFixed(1)} · ${baselines.label}: ~${baselines.touches_per_min}`,
     verdict,
     delta: Math.abs(deltaPct),
   };

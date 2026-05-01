@@ -1,30 +1,34 @@
 {
   "ranked_duels": {
-    "shooting_pct": 0.30,
+    "label": "SSL 1v1",
+    "shooting_pct": 0.32,
     "boost_starvation_pct": 0.10,
     "saves_per_match": 1.5,
-    "touches_per_min": 18,
+    "touches_per_min": 20,
     "demos_per_match": 0.8
   },
   "ranked_doubles": {
+    "label": "SSL 2v2",
     "shooting_pct": 0.28,
-    "boost_starvation_pct": 0.15,
-    "saves_per_match": 2.0,
-    "touches_per_min": 14,
+    "boost_starvation_pct": 0.13,
+    "saves_per_match": 2.2,
+    "touches_per_min": 13,
     "demos_per_match": 1.2
   },
   "ranked_standard": {
+    "label": "SSL 3v3",
     "shooting_pct": 0.25,
-    "boost_starvation_pct": 0.18,
+    "boost_starvation_pct": 0.16,
     "saves_per_match": 1.8,
-    "touches_per_min": 10,
+    "touches_per_min": 9,
     "demos_per_match": 0.9
   },
   "default": {
+    "label": "SSL",
     "shooting_pct": 0.28,
-    "boost_starvation_pct": 0.15,
+    "boost_starvation_pct": 0.13,
     "saves_per_match": 2.0,
-    "touches_per_min": 14,
+    "touches_per_min": 13,
     "demos_per_match": 1.0
   }
 }

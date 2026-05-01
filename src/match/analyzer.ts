@@ -20,7 +20,8 @@ export function analyzeMatch(
   history: HistoricalAverages
 ): MatchResult {
   const stats = extractStats(buffer);
-  const playlistBaselines = (baselines as Record<string, Baselines>)['default'];
+  const allBaselines = baselines as Record<string, Baselines>;
+  const playlistBaselines = allBaselines[buffer.playlist] ?? allBaselines['default'];
 
   const insights = ALL_RULES
     .map(rule => rule(stats, history, playlistBaselines))
@@ -33,7 +34,7 @@ export function analyzeMatch(
 
   return {
     matchId: buffer.matchId,
-    playlist: 'default',
+    playlist: buffer.playlist,
     won,
     ownScore,
     oppScore,
@@ -80,7 +81,7 @@ function extractStats(buffer: MatchBuffer): MatchStats {
     durationSeconds,
     boostStarvationPct,
     demoGoalCorrelation,
-    playlist: 'default',
+    playlist: buffer.playlist,
   };
 }
 

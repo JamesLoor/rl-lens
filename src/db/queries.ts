@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS matches (
 
 export interface DB {
   insertMatch(result: MatchResult): number;
-  getRecentStats(n: number): HistoricalAverages;
+  getRecentStats(n: number, playlist: string): HistoricalAverages;
 }
 
 interface MatchRow {
@@ -55,9 +55,10 @@ export function createDB(dbPath: string): DB {
     )
   `);
 
-  const recentStmt = db.prepare<[number], MatchRow>(`
+  const recentStmt = db.prepare<[string, number], MatchRow>(`
     SELECT shots, goals, saves, touches, duration_seconds, boost_starvation_pct
     FROM matches
+    WHERE playlist = ?
     ORDER BY played_at DESC
     LIMIT ?
   `);
@@ -84,8 +85,8 @@ export function createDB(dbPath: string): DB {
       return Number(info.lastInsertRowid);
     },
 
-    getRecentStats(n: number): HistoricalAverages {
-      const rows = recentStmt.all(n);
+    getRecentStats(n: number, playlist: string): HistoricalAverages {
+      const rows = recentStmt.all(playlist, n);
       if (rows.length === 0) {
         return {
           avgShootingPct: null,

@@ -99,7 +99,7 @@ app.whenReady().then(() => {
     send('match:state', 'analyzing');
 
     try {
-      const history = db.getRecentStats(20);
+      const history = db.getRecentStats(20, buffer.playlist);
       const result = analyzeMatch(buffer, history);
       result.matchNumber = db.insertMatch(result);
       lastResult = result;
