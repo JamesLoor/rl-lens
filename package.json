@@ -10,6 +10,9 @@
     "postinstall": "electron-rebuild -f -w better-sqlite3",
     "rebuild": "electron-rebuild -f -w better-sqlite3"
   },
+  "pnpm": {
+    "neverBuiltDependencies": ["better-sqlite3"]
+  },
   "dependencies": {
     "better-sqlite3": "^9.4.3",
     "ws": "^8.16.0"
