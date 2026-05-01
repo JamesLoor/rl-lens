@@ -39,11 +39,13 @@ interface MatchRow {
   boost_starvation_pct: number;
 }
 
-// Keep 1 state sample per second — enough to recompute any time-series metric
+// Keep 1 sample per 200ms (5Hz) — enough to accurately capture short events
+// like boost dips, supersonic bursts, and air time without aliasing artifacts.
+// A 5-min match produces ~1500 samples (~1-2MB).
 function subsampleStates(samples: StateSample[]): StateSample[] {
   let lastTs = -Infinity;
   return samples.filter(s => {
-    if (s.timestamp - lastTs >= 1000) {
+    if (s.timestamp - lastTs >= 200) {
       lastTs = s.timestamp;
       return true;
     }
