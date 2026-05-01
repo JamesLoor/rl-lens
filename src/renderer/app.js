@@ -70,39 +70,26 @@ function renderReport(result) {
 
   const shootingPct = s.shots > 0 ? s.goals / s.shots : 0;
 
-  const rows = [
-    statRow('Precisión de tiro',
-      pct(shootingPct), `~${pct(b.shooting_pct)}`,
-      verdict(shootingPct, b.shooting_pct, 'higher')),
-
-    statRow('Goles',
-      s.goals, `~${b.goals_per_match}`,
-      verdict(s.goals, b.goals_per_match, 'higher')),
-
-    statRow('Tiros',
-      s.shots, `~${b.shots_per_match}`,
-      'neutral'),
-
-    statRow('Paradas',
-      s.saves, `~${b.saves_per_match}`,
-      verdict(s.saves, b.saves_per_match, 'higher')),
-
-    statRow('Boost promedio',
-      s.avgBoost >= 0 ? s.avgBoost.toFixed(0) : '—', `~${b.avg_boost}`,
-      s.avgBoost >= 0 ? verdict(s.avgBoost, b.avg_boost, 'higher') : 'neutral'),
-
-    statRow('Tiempo sin boost',
-      s.boostStarvationPct >= 0 ? pct(s.boostStarvationPct) : '—', `~${pct(b.boost_starvation_pct)}`,
-      s.boostStarvationPct >= 0 ? verdict(s.boostStarvationPct, b.boost_starvation_pct, 'lower') : 'neutral'),
-
-    statRow('Supersónico',
-      s.supersonicPct >= 0 ? pct(s.supersonicPct) : '—', `~${pct(b.supersonic_pct)}`,
-      s.supersonicPct >= 0 ? verdict(s.supersonicPct, b.supersonic_pct, 'higher') : 'neutral'),
-
-    statRow('Demos',
-      s.demosInflicted, `~${b.demos_per_match}`,
-      'neutral'),
+  // [label, youVal, sslVal, displayYou, displaySsl, direction, barMax]
+  // barMax defines the 100% point of the progress bar
+  const defs = [
+    ['Precisión de tiro', shootingPct,              b.shooting_pct,        pct(shootingPct),                       `~${pct(b.shooting_pct)}`,        'higher', 0.60],
+    ['Goles',             s.goals,                  b.goals_per_match,     s.goals,                                `~${b.goals_per_match}`,          'higher', Math.max(s.goals, b.goals_per_match) * 1.5],
+    ['Tiros',             s.shots,                  b.shots_per_match,     s.shots,                                `~${b.shots_per_match}`,          'neutral', Math.max(s.shots, b.shots_per_match) * 1.5],
+    ['Paradas',           s.saves,                  b.saves_per_match,     s.saves,                                `~${b.saves_per_match}`,          'higher', Math.max(s.saves, b.saves_per_match) * 1.5],
+    ['Boost promedio',    s.avgBoost,               b.avg_boost,           s.avgBoost >= 0 ? s.avgBoost.toFixed(0) : '—', `~${b.avg_boost}`,         'higher', 100],
+    ['Tiempo sin boost',  s.boostStarvationPct,     b.boost_starvation_pct, s.boostStarvationPct >= 0 ? pct(s.boostStarvationPct) : '—', `~${pct(b.boost_starvation_pct)}`, 'lower', 0.80],
+    ['Supersónico',       s.supersonicPct,          b.supersonic_pct,      s.supersonicPct >= 0 ? pct(s.supersonicPct) : '—', `~${pct(b.supersonic_pct)}`,    'higher', 0.50],
+    ['Demos',             s.demosInflicted,         b.demos_per_match,     s.demosInflicted,                       `~${b.demos_per_match}`,          'neutral', Math.max(s.demosInflicted, b.demos_per_match) * 1.5],
   ];
+
+  const rows = defs.map(([label, you, ssl, dispYou, dispSsl, dir, barMax]) => {
+    const hasData = typeof you === 'number' && you >= 0;
+    const v = hasData ? verdict(you, ssl, dir) : 'neutral';
+    const barPct    = hasData ? Math.min(you / barMax, 1) : 0;
+    const markerPct = Math.min(ssl / barMax, 1);
+    return statRow(label, dispYou, dispSsl, v, barPct, markerPct, hasData);
+  });
 
   statsTable.innerHTML = `
     <div class="stats-table">
@@ -118,12 +105,20 @@ function renderReport(result) {
   showView('report');
 }
 
-function statRow(label, you, ssl, v) {
+function statRow(label, you, ssl, v, barPct, markerPct, hasData) {
+  const bar = hasData ? `
+    <div class="stat-bar-wrap">
+      <div class="stat-bar-track">
+        <div class="stat-bar-fill verdict-${v}" style="width:${(barPct * 100).toFixed(1)}%"></div>
+        <div class="stat-bar-marker" style="left:${(markerPct * 100).toFixed(1)}%"></div>
+      </div>
+    </div>` : '';
   return `
     <div class="stat-row verdict-${v}">
       <span class="col-label">${label}</span>
       <span class="col-you">${you}</span>
       <span class="col-ssl">${ssl}</span>
+      ${bar}
     </div>`;
 }
 

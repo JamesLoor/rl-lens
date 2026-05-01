@@ -276,14 +276,13 @@ body {
 .stat-row {
   display: grid;
   grid-template-columns: 1fr 52px 72px;
-  padding: 9px 12px;
+  grid-template-rows: auto auto;
+  padding: 8px 12px 6px;
   border-bottom: 1px solid var(--border);
   font-size: 13px;
   align-items: center;
-  transition: background 0.1s;
 }
 .stat-row:last-child { border-bottom: none; }
-.stat-row:hover { background: var(--surface); }
 
 .col-label { color: var(--text-muted); font-size: 12px; }
 .col-you   { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -293,3 +292,36 @@ body {
 .stat-row.verdict-warning .col-you { color: var(--warning); }
 .stat-row.verdict-bad     .col-you { color: var(--bad); }
 .stat-row.verdict-neutral .col-you { color: var(--text); }
+
+.stat-bar-wrap {
+  grid-column: 1 / -1;
+  padding-top: 5px;
+}
+
+.stat-bar-track {
+  position: relative;
+  height: 3px;
+  background: var(--surface-2);
+  border-radius: 2px;
+  overflow: visible;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+.stat-bar-fill.verdict-good    { background: var(--good); }
+.stat-bar-fill.verdict-warning { background: var(--warning); }
+.stat-bar-fill.verdict-bad     { background: var(--bad); }
+.stat-bar-fill.verdict-neutral { background: var(--blue); }
+
+.stat-bar-marker {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 7px;
+  background: var(--text-muted);
+  border-radius: 1px;
+  transform: translateX(-50%);
+}
