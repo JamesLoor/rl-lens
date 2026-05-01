@@ -139,7 +139,7 @@ export class MatchCollector extends EventEmitter {
   }
 
   private _handleUpdateState(payload: UpdateStatePayload): void {
-    if (!this.buffer) this._startMatch();
+    if (!this.buffer) return;
     const buf = this.buffer!;
 
     // Identify local player via Game.Target (camera focus in normal play)
