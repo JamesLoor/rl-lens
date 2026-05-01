@@ -33,11 +33,12 @@ export class RLSocketClient extends EventEmitter {
       this.status = 'connected';
       this.reconnectDelay = 3000;
       this.emit('status', this.status);
-      // RL needs any incoming byte to start streaming events
-      this.socket!.write('\n');
+      // Send an HTTP-like request — RL responds to this by streaming JSON events
+      this.socket!.write('GET / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n');
     });
 
     this.socket.on('data', (chunk: Buffer) => {
+      this.emit('raw_chunk', chunk.toString('utf-8').substring(0, 200));
       this.buffer += chunk.toString('utf-8');
       this._parseBuffer();
     });
