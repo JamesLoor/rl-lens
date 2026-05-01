@@ -118,7 +118,7 @@ app.whenReady().then(() => {
   });
 
   ipcMain.on('setup:run', () => {
-    const batPath = path.join(app.getAppPath(), '..', 'setup-rl-api.bat');
+    const batPath = path.join(app.getAppPath(), 'setup-rl-api.bat');
     if (fs.existsSync(batPath)) {
       shell.openPath(batPath);
     } else {
