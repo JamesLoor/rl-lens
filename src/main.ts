@@ -80,6 +80,18 @@ app.whenReady().then(() => {
     }
   });
 
+  socket.on('ws_error', (msg: string) => {
+    log('WARN', 'WebSocket error', msg);
+  });
+
+  let rawCount = 0;
+  socket.on('raw_data', (text: string) => {
+    if (rawCount < 3) {
+      rawCount++;
+      log('INFO', 'Raw WS frame', text.substring(0, 300));
+    }
+  });
+
   const seenEvents = new Set<string>();
   socket.on('rl_event', (event: { Event: string; Data: unknown }) => {
     if (!seenEvents.has(event.Event)) {
