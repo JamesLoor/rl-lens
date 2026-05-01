@@ -6,7 +6,7 @@ import { MatchCollector } from './match/collector';
 import { analyzeMatch, buildDemoResult, MatchResult } from './match/analyzer';
 import { createDB } from './db/queries';
 
-const RL_PORT = 49122;
+const RL_PORT = 49123;
 
 let mainWindow: BrowserWindow | null = null;
 let logFile: string | null = null;
