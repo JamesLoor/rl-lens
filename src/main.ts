@@ -11,6 +11,7 @@ const RL_PORT = 49123;
 let mainWindow: BrowserWindow | null = null;
 let logFile: string | null = null;
 let lastResult: MatchResult | null = null;
+let lastSocketStatus: { status: SocketStatus; port: number } | null = null;
 
 function initLog(userData: string): void {
   const logDir = path.join(userData, 'logs');
@@ -49,7 +50,7 @@ function createWindow(): void {
   );
 
   mainWindow.webContents.on('did-finish-load', () => {
-    // Re-send last known state to renderer on reload
+    if (lastSocketStatus) send('socket:status', lastSocketStatus);
     if (lastResult) send('match:result', lastResult);
   });
 
@@ -71,7 +72,8 @@ app.whenReady().then(() => {
 
   socket.on('status', (status: SocketStatus) => {
     log('INFO', 'Socket status changed', status);
-    send('socket:status', { status, port: RL_PORT });
+    lastSocketStatus = { status, port: RL_PORT };
+    send('socket:status', lastSocketStatus);
 
     if (status === 'disconnected' || status === 'error') {
       collector.discardIfActive();
