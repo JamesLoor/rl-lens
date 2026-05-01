@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>RL Insights</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <header class="app-header">
+    <span class="header-title">RL Insights</span>
+    <div class="header-status">
+      <span class="status-dot disconnected" id="status-dot"></span>
+      <span id="status-text">Desconectado</span>
+    </div>
+  </header>
+
+  <main id="main-content">
+
+    <!-- View: onboarding / disconnected -->
+    <div id="view-onboarding" class="view active">
+      <div class="onboarding-icon">🎮</div>
+      <h2>Activá la Stats API</h2>
+      <p class="muted">RL Insights necesita que Rocket League tenga la Stats API local habilitada.</p>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">1</span>
+          <div>
+            <strong>Encontrá el archivo de config</strong>
+            <code class="path">~/Library/Application Support/Rocket League/TAGame/Config/DefaultStatsAPI.ini</code>
+            <code class="path">%APPDATA%\Rocket League\TAGame\Config\DefaultStatsAPI.ini</code>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <div>
+            <strong>Añadí estas líneas</strong>
+            <pre class="code-block">[LanStatsServer]
+bEnabled=True
+WebSocketEnabled=True
+Port=49122</pre>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <div>
+            <strong>Reiniciá Rocket League</strong>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-demo" id="btn-demo">Ver modo demo →</button>
+    </div>
+
+    <!-- View: connected, waiting for match -->
+    <div id="view-listening" class="view">
+      <div class="view-center">
+        <div class="pulse-wrap">
+          <div class="pulse-ring"></div>
+          <div class="pulse-core"></div>
+        </div>
+        <h2>Escuchando...</h2>
+        <p class="muted">Empezá una partida en Rocket League</p>
+      </div>
+    </div>
+
+    <!-- View: match active, capturing -->
+    <div id="view-capturing" class="view">
+      <div class="view-center">
+        <div class="capture-icon">⚡</div>
+        <h2>Capturando partida</h2>
+        <p class="muted">El análisis aparecerá al terminar</p>
+      </div>
+    </div>
+
+    <!-- View: post-match report -->
+    <div id="view-report" class="view">
+      <div class="report-meta" id="report-meta"></div>
+      <div class="insights-list" id="insights-list"></div>
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "ranked_duels": {
+    "shooting_pct": 0.30,
+    "boost_starvation_pct": 0.10,
+    "saves_per_match": 1.5,
+    "touches_per_min": 18,
+    "demos_per_match": 0.8
+  },
+  "ranked_doubles": {
+    "shooting_pct": 0.28,
+    "boost_starvation_pct": 0.15,
+    "saves_per_match": 2.0,
+    "touches_per_min": 14,
+    "demos_per_match": 1.2
+  },
+  "ranked_standard": {
+    "shooting_pct": 0.25,
+    "boost_starvation_pct": 0.18,
+    "saves_per_match": 1.8,
+    "touches_per_min": 10,
+    "demos_per_match": 0.9
+  },
+  "default": {
+    "shooting_pct": 0.28,
+    "boost_starvation_pct": 0.15,
+    "saves_per_match": 2.0,
+    "touches_per_min": 14,
+    "demos_per_match": 1.0
+  }
+}

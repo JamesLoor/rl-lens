@@ -1,0 +1,38 @@
+{
+  "name": "rocket-league-stats",
+  "version": "0.1.0",
+  "description": "Post-match insights para Rocket League",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "tsc && electron .",
+    "build": "tsc && electron-builder",
+    "typecheck": "tsc --noEmit",
+    "postinstall": "electron-rebuild -f -w better-sqlite3",
+    "rebuild": "electron-rebuild -f -w better-sqlite3"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/ws": "^8.5.10",
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1",
+    "electron-rebuild": "^3.2.9",
+    "typescript": "^5.3.3"
+  },
+  "build": {
+    "appId": "com.rlinsights",
+    "productName": "RL Insights",
+    "mac": {
+      "category": "public.app-category.utilities"
+    },
+    "files": [
+      "dist/**/*",
+      "src/renderer/**/*",
+      "src/insights/baselines.json",
+      "src/db/schema.sql"
+    ]
+  }
+}
