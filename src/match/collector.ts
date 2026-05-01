@@ -152,7 +152,8 @@ export class MatchCollector extends EventEmitter {
 
     // Detect playlist from arena name + player count (first time only)
     if (buf.playlist === 'default' && payload.Players.length > 0) {
-      const arena = (payload.Game.Arena ?? '').toLowerCase();
+      const arenaRaw = payload.Game.Arena ?? '';
+      const arena = arenaRaw.toLowerCase();
       const perTeam = new Map<number, number>();
       for (const p of payload.Players) {
         perTeam.set(p.TeamNum, (perTeam.get(p.TeamNum) ?? 0) + 1);
@@ -173,6 +174,8 @@ export class MatchCollector extends EventEmitter {
         else if (maxPerTeam === 2) buf.playlist = 'ranked_doubles';
         else if (maxPerTeam >= 3) buf.playlist = 'ranked_standard';
       }
+
+      this.emit('playlist_detected', { arena: arenaRaw, playlist: buf.playlist, maxPerTeam });
     }
 
     const sample: StateSample = {

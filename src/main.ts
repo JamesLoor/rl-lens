@@ -89,6 +89,10 @@ app.whenReady().then(() => {
     collector.handle(event);
   });
 
+  collector.on('playlist_detected', (info: { arena: string; playlist: string; maxPerTeam: number }) => {
+    log('INFO', 'Playlist detected', info);
+  });
+
   collector.on('match:start', () => {
     log('INFO', 'Match started — capturing');
     send('match:state', 'capturing');
