@@ -21,6 +21,8 @@ export interface PlayerSnapshot {
   shortcut: number;
   teamNum: number;
   boost: number | undefined;
+  speed: number | undefined;
+  bSupersonic: boolean | undefined;
   shots: number;
   goals: number;
   saves: number;
@@ -70,6 +72,8 @@ function snapshotPlayer(p: PlayerState): PlayerSnapshot {
     shortcut: p.Shortcut,
     teamNum: p.TeamNum,
     boost: p.Boost,
+    speed: p.Speed,
+    bSupersonic: p.bSupersonic,
     shots: p.Shots,
     goals: p.Goals,
     saves: p.Saves,

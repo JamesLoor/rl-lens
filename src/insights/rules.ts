@@ -18,6 +18,8 @@ export interface MatchStats {
   touches: number;
   durationSeconds: number;
   boostStarvationPct: number;
+  avgBoost: number;
+  supersonicPct: number;
   demoGoalCorrelation: number;
   playlist: string;
 }
@@ -36,8 +38,11 @@ export interface Baselines {
   shooting_pct: number;
   boost_starvation_pct: number;
   saves_per_match: number;
-  touches_per_min: number;
+  shots_per_match: number;
+  goals_per_match: number;
   demos_per_match: number;
+  avg_boost: number;
+  supersonic_pct: number;
 }
 
 type InsightRule = (
@@ -135,7 +140,7 @@ export const passivity: InsightRule = (stats, history, baselines) => {
   return {
     id: 'passivity',
     title,
-    description: `${touchesPerMin.toFixed(1)} toques/min · Tu promedio: ${histTpm.toFixed(1)} · ${baselines.label}: ~${baselines.touches_per_min}`,
+    description: `${touchesPerMin.toFixed(1)} toques/min · Tu promedio: ${histTpm.toFixed(1)}`,
     verdict,
     delta: Math.abs(deltaPct),
   };

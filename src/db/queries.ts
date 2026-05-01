@@ -57,10 +57,15 @@ export function createDB(dbPath: string): DB {
   const db = new Database(dbPath);
   db.exec(SCHEMA);
 
-  // Migration: add raw_buffer to existing installs that predate this column
-  try {
-    db.exec('ALTER TABLE matches ADD COLUMN raw_buffer TEXT');
-  } catch { /* column already exists */ }
+  // Migrations for columns added after initial release
+  const migrations = [
+    'ALTER TABLE matches ADD COLUMN raw_buffer TEXT',
+    'ALTER TABLE matches ADD COLUMN avg_boost REAL NOT NULL DEFAULT -1',
+    'ALTER TABLE matches ADD COLUMN supersonic_pct REAL NOT NULL DEFAULT -1',
+  ];
+  for (const sql of migrations) {
+    try { db.exec(sql); } catch { /* column already exists */ }
+  }
 
   const insertStmt = db.prepare(`
     INSERT INTO matches (
@@ -68,13 +73,13 @@ export function createDB(dbPath: string): DB {
       duration_seconds, played_at,
       shots, goals, saves, assists,
       demos_inflicted, demos_received, touches, boost_starvation_pct,
-      raw_buffer
+      avg_boost, supersonic_pct, raw_buffer
     ) VALUES (
       @match_id, @playlist, @won, @own_score, @opp_score,
       @duration_seconds, @played_at,
       @shots, @goals, @saves, @assists,
       @demos_inflicted, @demos_received, @touches, @boost_starvation_pct,
-      @raw_buffer
+      @avg_boost, @supersonic_pct, @raw_buffer
     )
   `);
 
@@ -109,6 +114,8 @@ export function createDB(dbPath: string): DB {
         demos_received: result.stats.demosReceived,
         touches: result.stats.touches,
         boost_starvation_pct: result.stats.boostStarvationPct,
+        avg_boost: result.stats.avgBoost,
+        supersonic_pct: result.stats.supersonicPct,
         raw_buffer: JSON.stringify(subsampled),
       });
       return Number(info.lastInsertRowid);

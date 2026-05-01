@@ -4,71 +4,98 @@
     "shooting_pct": 0.32,
     "boost_starvation_pct": 0.10,
     "saves_per_match": 1.5,
-    "touches_per_min": 20,
-    "demos_per_match": 0.7
+    "shots_per_match": 7,
+    "goals_per_match": 2.2,
+    "demos_per_match": 0.7,
+    "avg_boost": 58,
+    "supersonic_pct": 0.28
   },
   "ranked_doubles": {
     "label": "SSL 2v2",
     "shooting_pct": 0.28,
     "boost_starvation_pct": 0.13,
     "saves_per_match": 2.2,
-    "touches_per_min": 13,
-    "demos_per_match": 1.2
+    "shots_per_match": 6,
+    "goals_per_match": 1.5,
+    "demos_per_match": 1.2,
+    "avg_boost": 55,
+    "supersonic_pct": 0.22
   },
   "ranked_standard": {
     "label": "SSL 3v3",
     "shooting_pct": 0.25,
     "boost_starvation_pct": 0.16,
     "saves_per_match": 1.8,
-    "touches_per_min": 9,
-    "demos_per_match": 0.9
+    "shots_per_match": 5,
+    "goals_per_match": 1.2,
+    "demos_per_match": 0.9,
+    "avg_boost": 52,
+    "supersonic_pct": 0.18
   },
   "hoops": {
     "label": "SSL Hoops",
     "shooting_pct": 0.38,
     "boost_starvation_pct": 0.12,
     "saves_per_match": 3.5,
-    "touches_per_min": 18,
-    "demos_per_match": 0.8
+    "shots_per_match": 9,
+    "goals_per_match": 3.4,
+    "demos_per_match": 0.8,
+    "avg_boost": 52,
+    "supersonic_pct": 0.15
   },
   "dropshot": {
     "label": "SSL Dropshot",
     "shooting_pct": 0.20,
     "boost_starvation_pct": 0.15,
     "saves_per_match": 4.0,
-    "touches_per_min": 15,
-    "demos_per_match": 0.5
+    "shots_per_match": 12,
+    "goals_per_match": 2.4,
+    "demos_per_match": 0.5,
+    "avg_boost": 50,
+    "supersonic_pct": 0.20
   },
   "snowday": {
     "label": "SSL Snow Day",
     "shooting_pct": 0.22,
     "boost_starvation_pct": 0.14,
     "saves_per_match": 3.0,
-    "touches_per_min": 12,
-    "demos_per_match": 0.6
+    "shots_per_match": 10,
+    "goals_per_match": 2.2,
+    "demos_per_match": 0.6,
+    "avg_boost": 51,
+    "supersonic_pct": 0.19
   },
   "rumble": {
     "label": "SSL Rumble",
     "shooting_pct": 0.30,
     "boost_starvation_pct": 0.18,
     "saves_per_match": 2.5,
-    "touches_per_min": 11,
-    "demos_per_match": 2.0
+    "shots_per_match": 7,
+    "goals_per_match": 2.1,
+    "demos_per_match": 2.0,
+    "avg_boost": 48,
+    "supersonic_pct": 0.16
   },
   "heatseeker": {
     "label": "Heatseeker",
     "shooting_pct": 1.0,
     "boost_starvation_pct": 0.20,
     "saves_per_match": 5.0,
-    "touches_per_min": 16,
-    "demos_per_match": 0.5
+    "shots_per_match": 8,
+    "goals_per_match": 5.0,
+    "demos_per_match": 0.5,
+    "avg_boost": 45,
+    "supersonic_pct": 0.30
   },
   "default": {
     "label": "SSL",
     "shooting_pct": 0.28,
     "boost_starvation_pct": 0.13,
     "saves_per_match": 2.0,
-    "touches_per_min": 13,
-    "demos_per_match": 1.0
+    "shots_per_match": 6,
+    "goals_per_match": 1.5,
+    "demos_per_match": 1.0,
+    "avg_boost": 55,
+    "supersonic_pct": 0.22
   }
 }

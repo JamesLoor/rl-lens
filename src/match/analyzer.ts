@@ -12,6 +12,7 @@ export interface MatchResult {
   playedAt: number;
   matchNumber: number;
   stats: MatchStats;
+  baselines: Baselines;
   insights: Insight[];
 }
 
@@ -27,7 +28,7 @@ export function analyzeMatch(
     .map(rule => rule(stats, history, playlistBaselines))
     .filter((r): r is Insight => r !== null)
     .sort((a, b) => b.delta - a.delta)
-    .slice(0, 5);
+    .slice(0, 3);
 
   const { ownScore, oppScore, won } = computeScore(buffer);
   const durationSeconds = (Date.now() - buffer.startTime) / 1000;
@@ -42,6 +43,7 @@ export function analyzeMatch(
     playedAt: buffer.startTime,
     matchNumber: 0,
     stats,
+    baselines: playlistBaselines,
     insights,
   };
 }
@@ -66,9 +68,11 @@ function extractStats(buffer: MatchBuffer): MatchStats {
     d => !localName || d.victim.Name === localName
   ).length;
 
-  const boostStarvationPct = computeBoostStarvation(buffer, localName);
-  const demoGoalCorrelation = computeDemoGoalCorrelation(buffer, localName);
-  const durationSeconds = (Date.now() - buffer.startTime) / 1000;
+  const boostStarvationPct    = computeBoostStarvation(buffer, localName);
+  const avgBoost              = computeAvgBoost(buffer, localName);
+  const supersonicPct         = computeSupersonicPct(buffer, localName);
+  const demoGoalCorrelation   = computeDemoGoalCorrelation(buffer, localName);
+  const durationSeconds       = (Date.now() - buffer.startTime) / 1000;
 
   return {
     shots,
@@ -80,6 +84,8 @@ function extractStats(buffer: MatchBuffer): MatchStats {
     touches,
     durationSeconds,
     boostStarvationPct,
+    avgBoost,
+    supersonicPct,
     demoGoalCorrelation,
     playlist: buffer.playlist,
   };
@@ -91,18 +97,34 @@ function countStatfeed(buffer: MatchBuffer, eventName: string, localName: string
   ).length;
 }
 
-function computeBoostStarvation(buffer: MatchBuffer, localName: string | null): number {
-  const samples = buffer.stateSamples
-    .map(s => {
-      const p = localName
-        ? s.players.find(p => p.name === localName)
-        : s.players[0];
-      return p?.boost;
-    })
-    .filter((b): b is number => b !== undefined);
+function pickLocalSamples(buffer: MatchBuffer, localName: string | null) {
+  return buffer.stateSamples.map(s =>
+    localName ? s.players.find(p => p.name === localName) : s.players[0]
+  );
+}
 
-  if (samples.length === 0) return -1;
-  return samples.filter(b => b < 25).length / samples.length;
+function computeBoostStarvation(buffer: MatchBuffer, localName: string | null): number {
+  const vals = pickLocalSamples(buffer, localName)
+    .map(p => p?.boost)
+    .filter((b): b is number => b !== undefined);
+  if (vals.length === 0) return -1;
+  return vals.filter(b => b < 25).length / vals.length;
+}
+
+function computeAvgBoost(buffer: MatchBuffer, localName: string | null): number {
+  const vals = pickLocalSamples(buffer, localName)
+    .map(p => p?.boost)
+    .filter((b): b is number => b !== undefined);
+  if (vals.length === 0) return -1;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+function computeSupersonicPct(buffer: MatchBuffer, localName: string | null): number {
+  const vals = pickLocalSamples(buffer, localName)
+    .map(p => p?.bSupersonic)
+    .filter((b): b is boolean => b !== undefined);
+  if (vals.length === 0) return -1;
+  return vals.filter(Boolean).length / vals.length;
 }
 
 function computeDemoGoalCorrelation(buffer: MatchBuffer, localName: string | null): number {
@@ -110,7 +132,6 @@ function computeDemoGoalCorrelation(buffer: MatchBuffer, localName: string | nul
     d => !localName || d.attacker.Name === localName
   );
   if (inflicted.length === 0) return 0;
-
   const withGoal = inflicted.filter(demo =>
     buffer.goals.some(
       g => g.timestamp > demo.timestamp && g.timestamp <= demo.timestamp + 5000
@@ -139,6 +160,7 @@ function computeScore(buffer: MatchBuffer): {
 }
 
 export function buildDemoResult(): MatchResult {
+  const demoBaselines = (baselines as Record<string, Baselines>)['ranked_doubles'];
   return {
     matchId: 'demo',
     playlist: 'ranked_doubles',
@@ -148,6 +170,7 @@ export function buildDemoResult(): MatchResult {
     durationSeconds: 300,
     playedAt: Date.now() - 2 * 60 * 1000,
     matchNumber: 0,
+    baselines: demoBaselines,
     stats: {
       shots: 8,
       goals: 1,
@@ -158,31 +181,11 @@ export function buildDemoResult(): MatchResult {
       touches: 42,
       durationSeconds: 300,
       boostStarvationPct: 0.47,
+      avgBoost: 38,
+      supersonicPct: 0.12,
       demoGoalCorrelation: 0.5,
       playlist: 'ranked_doubles',
     },
-    insights: [
-      {
-        id: 'boost_starvation',
-        title: 'Boost starvation severo',
-        description: '47% del partido con menos de 25 boost · Tu promedio: 31% · SSL: ~15%',
-        verdict: 'bad',
-        delta: 0.32,
-      },
-      {
-        id: 'shooting_efficiency',
-        title: 'Tiraste mucho, metiste poco',
-        description: '8 disparos, 1 gol (12%) · Tu promedio: 22% · SSL: ~28%',
-        verdict: 'bad',
-        delta: 0.16,
-      },
-      {
-        id: 'defensive_solidity',
-        title: 'Defensa sólida',
-        description: '4 saves · Tu promedio: 2.3',
-        verdict: 'good',
-        delta: 0.2,
-      },
-    ],
+    insights: [],
   };
 }
