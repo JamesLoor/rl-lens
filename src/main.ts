@@ -80,14 +80,6 @@ app.whenReady().then(() => {
     }
   });
 
-  let chunkCount = 0;
-  socket.on('raw_chunk', (text: string) => {
-    if (chunkCount < 5) {
-      chunkCount++;
-      log('INFO', `Raw chunk #${chunkCount}`, text);
-    }
-  });
-
   const seenEvents = new Set<string>();
   socket.on('rl_event', (event: { Event: string; Data: unknown }) => {
     if (!seenEvents.has(event.Event)) {

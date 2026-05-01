@@ -33,12 +33,10 @@ export class RLSocketClient extends EventEmitter {
       this.status = 'connected';
       this.reconnectDelay = 3000;
       this.emit('status', this.status);
-      // Send an HTTP-like request — RL responds to this by streaming JSON events
       this.socket!.write('GET / HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n');
     });
 
     this.socket.on('data', (chunk: Buffer) => {
-      this.emit('raw_chunk', chunk.toString('utf-8').substring(0, 200));
       this.buffer += chunk.toString('utf-8');
       this._parseBuffer();
     });
@@ -56,20 +54,48 @@ export class RLSocketClient extends EventEmitter {
     });
   }
 
+  // Scan buffer for complete JSON objects using brace depth — works whether
+  // RL uses '\n', '\r\n', or no delimiter at all between messages.
   private _parseBuffer(): void {
-    const lines = this.buffer.split('\n');
-    this.buffer = lines.pop() ?? '';
+    let i = 0;
+    while (i < this.buffer.length) {
+      const start = this.buffer.indexOf('{', i);
+      if (start === -1) break;
 
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
+      let depth = 0;
+      let inString = false;
+      let escape = false;
+      let end = -1;
+
+      for (let j = start; j < this.buffer.length; j++) {
+        const c = this.buffer[j];
+        if (escape) { escape = false; continue; }
+        if (c === '\\' && inString) { escape = true; continue; }
+        if (c === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (c === '{') depth++;
+        else if (c === '}') {
+          depth--;
+          if (depth === 0) { end = j; break; }
+        }
+      }
+
+      if (end === -1) break; // incomplete — wait for more data
+
+      const jsonStr = this.buffer.substring(start, end + 1);
+      i = end + 1;
+
       try {
-        const msg = JSON.parse(trimmed) as RLEvent;
-        this.emit('rl_event', msg);
+        const raw = JSON.parse(jsonStr) as { Event: string; Data: unknown };
+        // RL double-encodes Data as a JSON string — parse it a second time
+        const data = typeof raw.Data === 'string' ? JSON.parse(raw.Data) : raw.Data;
+        this.emit('rl_event', { Event: raw.Event, Data: data } as RLEvent);
       } catch {
-        // non-JSON line (e.g. HTTP headers), ignore
+        // skip malformed frame
       }
     }
+
+    this.buffer = this.buffer.substring(i);
   }
 
   private _scheduleReconnect(): void {
