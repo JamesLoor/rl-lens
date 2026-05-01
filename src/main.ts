@@ -80,7 +80,12 @@ app.whenReady().then(() => {
     }
   });
 
+  const seenEvents = new Set<string>();
   socket.on('rl_event', (event: { Event: string; Data: unknown }) => {
+    if (!seenEvents.has(event.Event)) {
+      seenEvents.add(event.Event);
+      log('INFO', 'New event type seen', event.Event);
+    }
     collector.handle(event);
   });
 
