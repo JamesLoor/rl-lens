@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import { HistoricalAverages } from '../insights/rules';
 import type { MatchResult } from '../match/analyzer';
+import type { MatchBuffer, StateSample } from '../match/collector';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS matches (
@@ -19,12 +20,13 @@ CREATE TABLE IF NOT EXISTS matches (
   demos_inflicted      INTEGER NOT NULL DEFAULT 0,
   demos_received       INTEGER NOT NULL DEFAULT 0,
   touches              INTEGER NOT NULL DEFAULT 0,
-  boost_starvation_pct REAL    NOT NULL DEFAULT -1
+  boost_starvation_pct REAL    NOT NULL DEFAULT -1,
+  raw_buffer           TEXT
 );
 `;
 
 export interface DB {
-  insertMatch(result: MatchResult): number;
+  insertMatch(result: MatchResult, buffer: MatchBuffer): number;
   getRecentStats(n: number, playlist: string): HistoricalAverages;
 }
 
@@ -37,21 +39,40 @@ interface MatchRow {
   boost_starvation_pct: number;
 }
 
+// Keep 1 state sample per second — enough to recompute any time-series metric
+function subsampleStates(samples: StateSample[]): StateSample[] {
+  let lastTs = -Infinity;
+  return samples.filter(s => {
+    if (s.timestamp - lastTs >= 1000) {
+      lastTs = s.timestamp;
+      return true;
+    }
+    return false;
+  });
+}
+
 export function createDB(dbPath: string): DB {
   const db = new Database(dbPath);
   db.exec(SCHEMA);
+
+  // Migration: add raw_buffer to existing installs that predate this column
+  try {
+    db.exec('ALTER TABLE matches ADD COLUMN raw_buffer TEXT');
+  } catch { /* column already exists */ }
 
   const insertStmt = db.prepare(`
     INSERT INTO matches (
       match_id, playlist, won, own_score, opp_score,
       duration_seconds, played_at,
       shots, goals, saves, assists,
-      demos_inflicted, demos_received, touches, boost_starvation_pct
+      demos_inflicted, demos_received, touches, boost_starvation_pct,
+      raw_buffer
     ) VALUES (
       @match_id, @playlist, @won, @own_score, @opp_score,
       @duration_seconds, @played_at,
       @shots, @goals, @saves, @assists,
-      @demos_inflicted, @demos_received, @touches, @boost_starvation_pct
+      @demos_inflicted, @demos_received, @touches, @boost_starvation_pct,
+      @raw_buffer
     )
   `);
 
@@ -64,7 +85,12 @@ export function createDB(dbPath: string): DB {
   `);
 
   return {
-    insertMatch(result: MatchResult): number {
+    insertMatch(result: MatchResult, buffer: MatchBuffer): number {
+      const subsampled: MatchBuffer = {
+        ...buffer,
+        stateSamples: subsampleStates(buffer.stateSamples),
+      };
+
       const info = insertStmt.run({
         match_id: result.matchId,
         playlist: result.playlist,
@@ -81,6 +107,7 @@ export function createDB(dbPath: string): DB {
         demos_received: result.stats.demosReceived,
         touches: result.stats.touches,
         boost_starvation_pct: result.stats.boostStarvationPct,
+        raw_buffer: JSON.stringify(subsampled),
       });
       return Number(info.lastInsertRowid);
     },
