@@ -5,7 +5,7 @@
     "boost_starvation_pct": 0.10,
     "saves_per_match": 1.5,
     "touches_per_min": 20,
-    "demos_per_match": 0.8
+    "demos_per_match": 0.7
   },
   "ranked_doubles": {
     "label": "SSL 2v2",
@@ -22,6 +22,46 @@
     "saves_per_match": 1.8,
     "touches_per_min": 9,
     "demos_per_match": 0.9
+  },
+  "hoops": {
+    "label": "SSL Hoops",
+    "shooting_pct": 0.38,
+    "boost_starvation_pct": 0.12,
+    "saves_per_match": 3.5,
+    "touches_per_min": 18,
+    "demos_per_match": 0.8
+  },
+  "dropshot": {
+    "label": "SSL Dropshot",
+    "shooting_pct": 0.20,
+    "boost_starvation_pct": 0.15,
+    "saves_per_match": 4.0,
+    "touches_per_min": 15,
+    "demos_per_match": 0.5
+  },
+  "snowday": {
+    "label": "SSL Snow Day",
+    "shooting_pct": 0.22,
+    "boost_starvation_pct": 0.14,
+    "saves_per_match": 3.0,
+    "touches_per_min": 12,
+    "demos_per_match": 0.6
+  },
+  "rumble": {
+    "label": "SSL Rumble",
+    "shooting_pct": 0.30,
+    "boost_starvation_pct": 0.18,
+    "saves_per_match": 2.5,
+    "touches_per_min": 11,
+    "demos_per_match": 2.0
+  },
+  "heatseeker": {
+    "label": "Heatseeker",
+    "shooting_pct": 1.0,
+    "boost_starvation_pct": 0.20,
+    "saves_per_match": 5.0,
+    "touches_per_min": 16,
+    "demos_per_match": 0.5
   },
   "default": {
     "label": "SSL",

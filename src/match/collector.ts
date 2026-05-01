@@ -150,16 +150,29 @@ export class MatchCollector extends EventEmitter {
       buf.localPlayerTeam = payload.Game.Target.TeamNum;
     }
 
-    // Detect playlist from max players per team (first time only)
+    // Detect playlist from arena name + player count (first time only)
     if (buf.playlist === 'default' && payload.Players.length > 0) {
+      const arena = (payload.Game.Arena ?? '').toLowerCase();
       const perTeam = new Map<number, number>();
       for (const p of payload.Players) {
         perTeam.set(p.TeamNum, (perTeam.get(p.TeamNum) ?? 0) + 1);
       }
       const maxPerTeam = Math.max(...perTeam.values());
-      if (maxPerTeam === 1) buf.playlist = 'ranked_duels';
-      else if (maxPerTeam === 2) buf.playlist = 'ranked_doubles';
-      else if (maxPerTeam >= 3) buf.playlist = 'ranked_standard';
+
+      // Modes with unique arena names — detectable regardless of team size
+      if (arena.includes('hoops')) {
+        buf.playlist = 'hoops';
+      } else if (arena.includes('shattershot')) {
+        buf.playlist = 'dropshot';
+      } else if (arena.includes('hockey') || arena.includes('snowday') || arena.includes('farm_night')) {
+        buf.playlist = 'snowday';
+      } else {
+        // Standard competitive modes detected by team size
+        // Rumble and Heatseeker use regular arenas — cannot distinguish here
+        if (maxPerTeam === 1) buf.playlist = 'ranked_duels';
+        else if (maxPerTeam === 2) buf.playlist = 'ranked_doubles';
+        else if (maxPerTeam >= 3) buf.playlist = 'ranked_standard';
+      }
     }
 
     const sample: StateSample = {
