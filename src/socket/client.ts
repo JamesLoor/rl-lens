@@ -1,11 +1,12 @@
-import WebSocket from 'ws';
+import net from 'net';
 import { EventEmitter } from 'events';
 import { RLEvent } from './events';
 
 export type SocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error';
 
 export class RLSocketClient extends EventEmitter {
-  private ws: WebSocket | null = null;
+  private socket: net.Socket | null = null;
+  private buffer = '';
   private readonly port: number;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectDelay = 3000;
@@ -26,33 +27,46 @@ export class RLSocketClient extends EventEmitter {
     this.status = 'connecting';
     this.emit('status', this.status);
 
-    this.ws = new WebSocket(`ws://localhost:${this.port}`);
+    this.socket = new net.Socket();
 
-    this.ws.on('open', () => {
+    this.socket.connect(this.port, '127.0.0.1', () => {
       this.status = 'connected';
       this.reconnectDelay = 3000;
       this.emit('status', this.status);
     });
 
-    this.ws.on('message', (raw: WebSocket.RawData) => {
-      try {
-        const msg = JSON.parse(raw.toString()) as RLEvent;
-        this.emit('rl_event', msg);
-      } catch {
-        // malformed frame, ignore
-      }
+    this.socket.on('data', (chunk: Buffer) => {
+      this.buffer += chunk.toString('utf-8');
+      this._parseBuffer();
     });
 
-    this.ws.on('close', () => {
+    this.socket.on('close', () => {
       this.status = 'disconnected';
+      this.buffer = '';
       this.emit('status', this.status);
       if (this.shouldReconnect) this._scheduleReconnect();
     });
 
-    this.ws.on('error', () => {
+    this.socket.on('error', () => {
       this.status = 'error';
       this.emit('status', this.status);
     });
+  }
+
+  private _parseBuffer(): void {
+    const lines = this.buffer.split('\n');
+    this.buffer = lines.pop() ?? '';
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      try {
+        const msg = JSON.parse(trimmed) as RLEvent;
+        this.emit('rl_event', msg);
+      } catch {
+        // malformed JSON, ignore
+      }
+    }
   }
 
   private _scheduleReconnect(): void {
@@ -65,6 +79,6 @@ export class RLSocketClient extends EventEmitter {
   disconnect(): void {
     this.shouldReconnect = false;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
-    this.ws?.close();
+    this.socket?.destroy();
   }
 }
