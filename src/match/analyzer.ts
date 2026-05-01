@@ -1,4 +1,4 @@
-import { MatchBuffer, PlayerSnapshot } from './collector';
+import { MatchBuffer } from './collector';
 import { MatchStats, Insight, HistoricalAverages, Baselines, ALL_RULES } from '../insights/rules';
 import baselines from '../insights/baselines.json';
 
@@ -20,8 +20,7 @@ export function analyzeMatch(
   history: HistoricalAverages
 ): MatchResult {
   const stats = extractStats(buffer);
-  const playlist = buffer.playlist;
-  const playlistBaselines = (baselines as Record<string, Baselines>)[playlist] ?? baselines.default;
+  const playlistBaselines = (baselines as Record<string, Baselines>)['default'];
 
   const insights = ALL_RULES
     .map(rule => rule(stats, history, playlistBaselines))
@@ -30,56 +29,45 @@ export function analyzeMatch(
     .slice(0, 5);
 
   const { ownScore, oppScore, won } = computeScore(buffer);
-
-  const durationSeconds =
-    buffer.stateSamples.length > 0
-      ? (Date.now() - buffer.startTime) / 1000
-      : 300;
+  const durationSeconds = (Date.now() - buffer.startTime) / 1000;
 
   return {
     matchId: buffer.matchId,
-    playlist,
+    playlist: 'default',
     won,
     ownScore,
     oppScore,
     durationSeconds,
     playedAt: buffer.startTime,
-    matchNumber: 0, // filled by main after DB insert
+    matchNumber: 0,
     stats,
     insights,
   };
 }
 
 function extractStats(buffer: MatchBuffer): MatchStats {
-  const localId = buffer.localPlayerId;
+  const localName = buffer.localPlayerName;
   const lastSample = buffer.stateSamples.at(-1);
-  const localFinal = localId && lastSample ? lastSample.players[localId] : null;
+  const localFinal = localName
+    ? lastSample?.players.find(p => p.name === localName)
+    : undefined;
 
-  const resolveFromStatefeed = (eventName: string) =>
-    buffer.statfeedEvents.filter(
-      e => e.eventName === eventName && (!localId || e.mainTarget.id === localId)
-    ).length;
-
-  const shots = localFinal?.shots ?? resolveFromStatefeed('Shot');
-  const goals = localFinal?.goals ?? resolveFromStatefeed('Goal');
-  const saves = localFinal?.saves ?? resolveFromStatefeed('Save');
-  const assists = localFinal?.assists ?? resolveFromStatefeed('Assist');
+  const shots   = localFinal?.shots   ?? countStatfeed(buffer, 'Shot',   localName);
+  const goals   = localFinal?.goals   ?? countStatfeed(buffer, 'Goal',   localName);
+  const saves   = localFinal?.saves   ?? countStatfeed(buffer, 'Save',   localName);
+  const assists = localFinal?.assists ?? countStatfeed(buffer, 'Assist', localName);
   const touches = localFinal?.touches ?? 0;
 
   const demosInflicted = buffer.demoEvents.filter(
-    d => !localId || d.attacker.id === localId
+    d => !localName || d.attacker.Name === localName
   ).length;
   const demosReceived = buffer.demoEvents.filter(
-    d => !localId || d.victim.id === localId
+    d => !localName || d.victim.Name === localName
   ).length;
 
-  const boostStarvationPct = computeBoostStarvation(buffer, localId);
-  const demoGoalCorrelation = computeDemoGoalCorrelation(buffer, localId);
-
-  const durationSeconds =
-    buffer.stateSamples.length > 0
-      ? (Date.now() - buffer.startTime) / 1000
-      : 300;
+  const boostStarvationPct = computeBoostStarvation(buffer, localName);
+  const demoGoalCorrelation = computeDemoGoalCorrelation(buffer, localName);
+  const durationSeconds = (Date.now() - buffer.startTime) / 1000;
 
   return {
     shots,
@@ -92,32 +80,33 @@ function extractStats(buffer: MatchBuffer): MatchStats {
     durationSeconds,
     boostStarvationPct,
     demoGoalCorrelation,
-    playlist: buffer.playlist,
+    playlist: 'default',
   };
 }
 
-function computeBoostStarvation(
-  buffer: MatchBuffer,
-  localId: string | null
-): number {
-  const boostSamples = buffer.stateSamples
+function countStatfeed(buffer: MatchBuffer, eventName: string, localName: string | null): number {
+  return buffer.statfeedEvents.filter(
+    e => e.eventName === eventName && (!localName || e.mainTarget.Name === localName)
+  ).length;
+}
+
+function computeBoostStarvation(buffer: MatchBuffer, localName: string | null): number {
+  const samples = buffer.stateSamples
     .map(s => {
-      if (localId) return s.players[localId]?.boost;
-      const me = Object.values(s.players).find(p => p.me);
-      return me?.boost;
+      const p = localName
+        ? s.players.find(p => p.name === localName)
+        : s.players[0];
+      return p?.boost;
     })
     .filter((b): b is number => b !== undefined);
 
-  if (boostSamples.length === 0) return -1;
-  return boostSamples.filter(b => b < 25).length / boostSamples.length;
+  if (samples.length === 0) return -1;
+  return samples.filter(b => b < 25).length / samples.length;
 }
 
-function computeDemoGoalCorrelation(
-  buffer: MatchBuffer,
-  localId: string | null
-): number {
+function computeDemoGoalCorrelation(buffer: MatchBuffer, localName: string | null): number {
   const inflicted = buffer.demoEvents.filter(
-    d => !localId || d.attacker.id === localId
+    d => !localName || d.attacker.Name === localName
   );
   if (inflicted.length === 0) return 0;
 

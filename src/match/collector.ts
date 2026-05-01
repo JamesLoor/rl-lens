@@ -12,35 +12,35 @@ import {
 export interface StateSample {
   timestamp: number;
   gameTime: number;
-  players: Record<string, PlayerSnapshot>;
+  players: PlayerSnapshot[];
 }
 
 export interface PlayerSnapshot {
-  id: string;
   name: string;
-  boost: number;
+  primaryId: string;
+  shortcut: number;
+  teamNum: number;
+  boost: number | undefined;
   shots: number;
   goals: number;
   saves: number;
   assists: number;
   demos: number;
   touches: number;
-  team: number;
-  me: boolean;
 }
 
 export interface StatfeedEntry {
   timestamp: number;
   eventName: string;
   mainTarget: PlayerRef;
-  secondaryTarget: PlayerRef | null;
+  secondaryTarget: PlayerRef | undefined;
 }
 
 export interface GoalEntry {
   timestamp: number;
-  gameTime: number;
+  goalTime: number;
   scorer: PlayerRef;
-  assister: PlayerRef | null;
+  assister: PlayerRef | undefined;
   teamNum: number;
 }
 
@@ -52,40 +52,29 @@ export interface DemoEntry {
 
 export interface MatchBuffer {
   matchId: string;
-  playlist: string;
   startTime: number;
-  localPlayerId: string | null;
+  localPlayerName: string | null;
   localPlayerTeam: number;
   stateSamples: StateSample[];
   statfeedEvents: StatfeedEntry[];
   goals: GoalEntry[];
   demoEvents: DemoEntry[];
-  isComplete: boolean;
   winnerTeamNum: number | null;
-}
-
-function mapPlaylist(raw: string | undefined): string {
-  if (!raw) return 'default';
-  const lower = raw.toLowerCase();
-  if (lower.includes('1v1') || lower.includes('duel')) return 'ranked_duels';
-  if (lower.includes('2v2') || lower.includes('doubles')) return 'ranked_doubles';
-  if (lower.includes('3v3') || lower.includes('standard')) return 'ranked_standard';
-  return 'default';
 }
 
 function snapshotPlayer(p: PlayerState): PlayerSnapshot {
   return {
-    id: p.id,
-    name: p.name,
-    boost: p.boost,
-    shots: p.shots,
-    goals: p.goals,
-    saves: p.saves,
-    assists: p.assists,
-    demos: p.demos,
-    touches: p.touches,
-    team: p.team,
-    me: p.me ?? false,
+    name: p.Name,
+    primaryId: p.PrimaryId,
+    shortcut: p.Shortcut,
+    teamNum: p.TeamNum,
+    boost: p.Boost,
+    shots: p.Shots,
+    goals: p.Goals,
+    saves: p.Saves,
+    assists: p.Assists,
+    demos: p.Demos,
+    touches: p.Touches,
   };
 }
 
@@ -97,28 +86,31 @@ export class MatchCollector extends EventEmitter {
   }
 
   handle(event: RLEvent): void {
-    switch (event.event) {
-      case 'game:match_created':
-      case 'game:initialized':
-      case 'game:pre_countdown_begin':
+    switch (event.Event) {
+      case 'MatchCreated':
+      case 'MatchInitialized':
         this._startMatch();
         break;
 
-      case 'game:update_state':
-        this._handleUpdateState(event.data as UpdateStatePayload);
+      case 'UpdateState':
+        this._handleUpdateState(event.Data as UpdateStatePayload);
         break;
 
-      case 'game:statfeed_event':
-        this._handleStatfeed(event.data as StatfeedPayload);
+      case 'StatfeedEvent':
+        this._handleStatfeed(event.Data as StatfeedPayload);
         break;
 
-      case 'game:goal_scored':
-        this._handleGoal(event.data as GoalScoredPayload);
+      case 'GoalScored':
+        this._handleGoal(event.Data as GoalScoredPayload);
         break;
 
-      case 'game:match_ended':
-      case 'game:podium_start':
-        this._handleMatchEnd(event.data as MatchEndedPayload);
+      case 'MatchEnded':
+      case 'PodiumStart':
+        this._handleMatchEnd(event.Data as MatchEndedPayload);
+        break;
+
+      case 'MatchDestroyed':
+        this.discardIfActive();
         break;
     }
   }
@@ -131,53 +123,35 @@ export class MatchCollector extends EventEmitter {
   }
 
   private _startMatch(): void {
-    if (this.buffer) return; // already tracking
+    if (this.buffer) return;
     this.buffer = {
       matchId: `match-${Date.now()}`,
-      playlist: 'default',
       startTime: Date.now(),
-      localPlayerId: null,
+      localPlayerName: null,
       localPlayerTeam: 0,
       stateSamples: [],
       statfeedEvents: [],
       goals: [],
       demoEvents: [],
-      isComplete: false,
       winnerTeamNum: null,
     };
     this.emit('match:start');
   }
 
   private _handleUpdateState(payload: UpdateStatePayload): void {
-    if (!payload.hasGame) return;
-
-    if (!this.buffer) {
-      // Started capturing mid-match
-      this._startMatch();
-    }
+    if (!this.buffer) this._startMatch();
     const buf = this.buffer!;
 
-    // Detect local player on first occurrence
-    if (!buf.localPlayerId) {
-      const entry = Object.entries(payload.players).find(([, p]) => p.me === true);
-      if (entry) {
-        buf.localPlayerId = entry[0];
-        buf.localPlayerTeam = entry[1].team;
-      }
+    // Identify local player via Game.Target (camera focus in normal play)
+    if (!buf.localPlayerName && payload.Game.bHasTarget && payload.Game.Target) {
+      buf.localPlayerName = payload.Game.Target.Name;
+      buf.localPlayerTeam = payload.Game.Target.TeamNum;
     }
 
-    // Update playlist from game state
-    if (payload.game.playlist) {
-      buf.playlist = mapPlaylist(payload.game.playlist);
-    }
-
-    // Sample current state
     const sample: StateSample = {
       timestamp: Date.now(),
-      gameTime: payload.game.time,
-      players: Object.fromEntries(
-        Object.entries(payload.players).map(([id, p]) => [id, snapshotPlayer(p)])
-      ),
+      gameTime: payload.Game.TimeSeconds,
+      players: payload.Players.map(snapshotPlayer),
     };
     buf.stateSamples.push(sample);
   }
@@ -187,16 +161,17 @@ export class MatchCollector extends EventEmitter {
 
     this.buffer.statfeedEvents.push({
       timestamp: Date.now(),
-      eventName: payload.event_name,
-      mainTarget: payload.main_target,
-      secondaryTarget: payload.secondary_target,
+      eventName: payload.EventName,
+      mainTarget: payload.MainTarget,
+      secondaryTarget: payload.SecondaryTarget,
     });
 
-    if (payload.event_name === 'Demo') {
+    // Demolish: MainTarget = attacker, SecondaryTarget = victim
+    if (payload.EventName === 'Demolish' && payload.SecondaryTarget) {
       this.buffer.demoEvents.push({
         timestamp: Date.now(),
-        attacker: payload.main_target,
-        victim: payload.secondary_target ?? payload.main_target,
+        attacker: payload.MainTarget,
+        victim: payload.SecondaryTarget,
       });
     }
   }
@@ -205,17 +180,18 @@ export class MatchCollector extends EventEmitter {
     if (!this.buffer) return;
     this.buffer.goals.push({
       timestamp: Date.now(),
-      gameTime: payload.goaltime,
-      scorer: payload.scorer,
-      assister: payload.assister,
-      teamNum: payload.team_num,
+      goalTime: payload.GoalTime,
+      scorer: payload.Scorer,
+      assister: payload.Assister,
+      teamNum: payload.Scorer.TeamNum,
     });
   }
 
   private _handleMatchEnd(payload: MatchEndedPayload): void {
     if (!this.buffer) return;
-    this.buffer.isComplete = true;
-    this.buffer.winnerTeamNum = payload?.winner_team_num ?? null;
+    if (payload?.WinnerTeamNum !== undefined) {
+      this.buffer.winnerTeamNum = payload.WinnerTeamNum;
+    }
     const completed = this.buffer;
     this.buffer = null;
     this.emit('match:end', completed);

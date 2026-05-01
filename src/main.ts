@@ -78,7 +78,7 @@ app.whenReady().then(() => {
     }
   });
 
-  socket.on('rl_event', (event: { event: string; data: unknown }) => {
+  socket.on('rl_event', (event: { Event: string; Data: unknown }) => {
     collector.handle(event);
   });
 

@@ -32,7 +32,6 @@ export class RLSocketClient extends EventEmitter {
       this.status = 'connected';
       this.reconnectDelay = 3000;
       this.emit('status', this.status);
-      this._subscribe();
     });
 
     this.ws.on('message', (raw: WebSocket.RawData) => {
@@ -54,25 +53,6 @@ export class RLSocketClient extends EventEmitter {
       this.status = 'error';
       this.emit('status', this.status);
     });
-  }
-
-  private _subscribe(): void {
-    // SOS-plugin compatible subscription
-    const msg = JSON.stringify({
-      event: 'wsRelay:register',
-      data: [
-        'game:match_created',
-        'game:initialized',
-        'game:pre_countdown_begin',
-        'game:post_countdown_begin',
-        'game:update_state',
-        'game:statfeed_event',
-        'game:goal_scored',
-        'game:match_ended',
-        'game:podium_start',
-      ],
-    });
-    this.ws?.send(msg);
   }
 
   private _scheduleReconnect(): void {

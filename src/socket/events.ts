@@ -1,83 +1,105 @@
-export interface PlayerLocation {
-  x: number;
-  y: number;
-  z: number;
-  pitch: number;
-  roll: number;
-  yaw: number;
+export interface PlayerRef {
+  Name: string;
+  Shortcut: number;
+  TeamNum: number;
+}
+
+export interface AttackerRef {
+  Name: string;
+  Shortcut: number;
+  TeamNum: number;
 }
 
 export interface PlayerState {
-  assists: number;
-  boost: number;
-  demos: number;
-  goals: number;
-  hasCar: boolean;
-  id: string;
-  isDead: boolean;
-  location: PlayerLocation;
-  me: boolean;
-  name: string;
-  saves: number;
-  score: number;
-  shots: number;
-  speed: number;
-  team: number;
-  touches: number;
+  Name: string;
+  PrimaryId: string;
+  Shortcut: number;
+  TeamNum: number;
+  Score: number;
+  Goals: number;
+  Shots: number;
+  Assists: number;
+  Saves: number;
+  Touches: number;
+  CarTouches: number;
+  Demos: number;
+  // SPECTATOR: only present for self/teammates or when spectating
+  bHasCar?: boolean;
+  Speed?: number;
+  Boost?: number;
+  bBoosting?: boolean;
+  bOnGround?: boolean;
+  bOnWall?: boolean;
+  bPowersliding?: boolean;
+  bDemolished?: boolean;
+  bSupersonic?: boolean;
+  // CONDITIONAL: present only when demolished
+  Attacker?: AttackerRef;
+}
+
+export interface TeamState {
+  Name: string;
+  TeamNum: number;
+  Score: number;
+  ColorPrimary: string;
+  ColorSecondary: string;
 }
 
 export interface BallState {
-  location: PlayerLocation;
-  speed: number;
-  team: number;
+  Speed: number;
+  TeamNum: number;
 }
 
 export interface GameState {
-  ball: BallState;
-  hasTarget: boolean;
-  hasWinner: boolean;
-  isOT: boolean;
-  isReplay: boolean;
-  isSeries: boolean;
-  target: string;
-  time: number;
-  winner: string;
-  playlist?: string;
+  Teams: TeamState[];
+  TimeSeconds: number;
+  bOvertime: boolean;
+  Ball: BallState;
+  bReplay: boolean;
+  bHasWinner: boolean;
+  Winner: string;
+  Arena: string;
+  bHasTarget: boolean;
+  Target?: PlayerRef;
+  Frame?: number;
+  Elapsed?: number;
 }
 
 export interface UpdateStatePayload {
-  game: GameState;
-  players: Record<string, PlayerState>;
-  hasGame: boolean;
+  MatchGuid?: string;
+  Players: PlayerState[];
+  Game: GameState;
 }
 
-export interface PlayerRef {
-  id: string;
-  name: string;
-  team_num: number;
-}
-
-export interface StatfeedPayload {
-  event_name: string;
-  main_target: PlayerRef;
-  secondary_target: PlayerRef | null;
-  type: number;
+export interface BallLastTouch {
+  Player: PlayerRef;
+  Speed: number;
 }
 
 export interface GoalScoredPayload {
-  assister: PlayerRef | null;
-  ball_left_player: boolean;
-  goalspeed: number;
-  goaltime: number;
-  scorer: PlayerRef;
-  team_num: number;
+  MatchGuid?: string;
+  GoalSpeed: number;
+  GoalTime: number;
+  ImpactLocation: { X: number; Y: number; Z: number };
+  Scorer: PlayerRef;
+  Assister?: PlayerRef;
+  BallLastTouch: BallLastTouch;
+}
+
+export interface StatfeedPayload {
+  MatchGuid?: string;
+  EventName: string;
+  Type: string;
+  MainTarget: PlayerRef;
+  SecondaryTarget?: PlayerRef;
 }
 
 export interface MatchEndedPayload {
-  winner_team_num: number;
+  MatchGuid?: string;
+  WinnerTeamNum: number;
 }
 
 export interface RLEvent {
-  event: string;
-  data: unknown;
+  Event: string;
+  Data: unknown;
 }
