@@ -29,25 +29,25 @@
         <div class="step">
           <span class="step-num">1</span>
           <div>
-            <strong>Encontrá el archivo de config</strong>
-            <code class="path">~/Library/Application Support/Rocket League/TAGame/Config/DefaultStatsAPI.ini</code>
-            <code class="path">%APPDATA%\Rocket League\TAGame\Config\DefaultStatsAPI.ini</code>
+            <strong>Configurá automáticamente (Windows)</strong>
+            <button class="btn-setup" id="btn-setup">Ejecutar setup-rl-api.bat →</button>
           </div>
         </div>
         <div class="step">
           <span class="step-num">2</span>
           <div>
-            <strong>Añadí estas líneas</strong>
+            <strong>Reiniciá Rocket League</strong>
+          </div>
+        </div>
+        <div class="step step-manual">
+          <span class="step-num">·</span>
+          <div>
+            <strong>Manual (macOS / Linux)</strong>
+            <code class="path">~/Library/Application Support/Rocket League/TAGame/Config/DefaultStatsAPI.ini</code>
             <pre class="code-block">[LanStatsServer]
 bEnabled=True
 WebSocketEnabled=True
 Port=49122</pre>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">3</span>
-          <div>
-            <strong>Reiniciá Rocket League</strong>
           </div>
         </div>
       </div>

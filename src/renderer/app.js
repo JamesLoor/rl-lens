@@ -15,6 +15,7 @@ const views = {
 const reportMeta     = document.getElementById('report-meta');
 const insightsList   = document.getElementById('insights-list');
 const btnDemo        = document.getElementById('btn-demo');
+const btnSetup       = document.getElementById('btn-setup');
 
 // ── State ─────────────────────────────────────────────
 let socketConnected = false;
@@ -133,4 +134,8 @@ if (api) {
 
 btnDemo?.addEventListener('click', () => {
   if (api) api.requestDemo();
+});
+
+btnSetup?.addEventListener('click', () => {
+  if (api) api.runSetup();
 });

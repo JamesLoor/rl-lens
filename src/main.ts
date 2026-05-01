@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { RLSocketClient, SocketStatus } from './socket/client';
@@ -115,6 +115,15 @@ app.whenReady().then(() => {
     const demo = buildDemoResult();
     send('match:result', demo);
     send('match:state', 'done');
+  });
+
+  ipcMain.on('setup:run', () => {
+    const batPath = path.join(app.getAppPath(), '..', 'setup-rl-api.bat');
+    if (fs.existsSync(batPath)) {
+      shell.openPath(batPath);
+    } else {
+      log('WARN', 'setup-rl-api.bat not found', batPath);
+    }
   });
 
   socket.connect();

@@ -126,6 +126,23 @@ body {
   margin-bottom: 6px;
 }
 
+.step-manual { opacity: 0.5; }
+
+.btn-setup {
+  -webkit-app-region: no-drag;
+  background: var(--blue);
+  border: none;
+  color: #000;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: opacity 0.15s;
+}
+.btn-setup:hover { opacity: 0.85; }
+
 .path {
   display: block;
   font-family: 'SF Mono', 'Fira Code', monospace;

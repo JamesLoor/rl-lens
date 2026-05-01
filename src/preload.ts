@@ -13,4 +13,7 @@ contextBridge.exposeInMainWorld('rlStats', {
   requestDemo(): void {
     ipcRenderer.send('match:demo');
   },
+  runSetup(): void {
+    ipcRenderer.send('setup:run');
+  },
 });
