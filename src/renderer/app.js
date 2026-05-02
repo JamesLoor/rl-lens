@@ -8,6 +8,7 @@ const statusDot  = document.getElementById('status-dot');
 const statusText = document.getElementById('status-text');
 const views = {
   onboarding: document.getElementById('view-onboarding'),
+  waiting:    document.getElementById('view-waiting'),
   listening:  document.getElementById('view-listening'),
   capturing:  document.getElementById('view-capturing'),
   report:     document.getElementById('view-report'),
@@ -28,6 +29,7 @@ const logOutput       = document.getElementById('log-output');
 // ── State ─────────────────────────────────────────────
 let socketConnected = false;
 let lastResult = null;
+let setupDone = false;
 let activeTab = 'home';
 let historyLoaded = false;
 
@@ -263,6 +265,12 @@ function appendLogLine(line) {
 
 // ── Socket / match events ─────────────────────────────
 if (api) {
+  api.onSetupDone((done) => {
+    setupDone = done;
+    // If currently showing onboarding and setup is now confirmed, switch to waiting
+    if (done && !socketConnected && !lastResult) showView('waiting');
+  });
+
   api.onSocketStatus(({ status, port }) => {
     socketConnected = status === 'connected';
 
@@ -277,7 +285,8 @@ if (api) {
     if (statusText) statusText.textContent = labels[status] || status;
 
     if (!lastResult) {
-      showView(status === 'connected' ? 'listening' : 'onboarding');
+      if (status === 'connected') showView('listening');
+      else showView(setupDone ? 'waiting' : 'onboarding');
     }
   });
 
@@ -288,7 +297,7 @@ if (api) {
     } else if (state === 'capturing' || state === 'analyzing' || state === 'loading') {
       if (!lastResult) showView('capturing');
     } else if (state === 'idle') {
-      if (!lastResult) showView(socketConnected ? 'listening' : 'onboarding');
+      if (!lastResult) showView(socketConnected ? 'listening' : setupDone ? 'waiting' : 'onboarding');
     }
   });
 

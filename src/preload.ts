@@ -10,6 +10,9 @@ contextBridge.exposeInMainWorld('rlStats', {
   onMatchResult(cb: (result: unknown) => void): void {
     ipcRenderer.on('match:result', (_e, result) => cb(result));
   },
+  onSetupDone(cb: (done: boolean) => void): void {
+    ipcRenderer.on('setup:done', (_e, done) => cb(done));
+  },
   onLogLine(cb: (line: string) => void): void {
     ipcRenderer.on('log:line', (_e, line) => cb(line));
   },

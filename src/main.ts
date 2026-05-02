@@ -13,6 +13,8 @@ let mainWindow: BrowserWindow | null = null;
 let logFile: string | null = null;
 let lastResult: MatchResult | null = null;
 let lastSocketStatus: { status: SocketStatus; port: number } | null = null;
+let setupDone = false;
+let setupFlagPath = '';
 const logBuffer: string[] = [];
 const LOG_BUFFER_SIZE = 400;
 
@@ -57,6 +59,7 @@ function createWindow(): void {
   );
 
   mainWindow.webContents.on('did-finish-load', () => {
+    send('setup:done', setupDone);
     if (lastSocketStatus) send('socket:status', lastSocketStatus);
     if (lastResult) send('match:result', lastResult);
     for (const line of logBuffer) send('log:line', line);
@@ -69,6 +72,8 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   const userData = app.getPath('userData');
+  setupFlagPath = path.join(userData, 'setup-complete');
+  setupDone = fs.existsSync(setupFlagPath);
   initLog(userData);
   log('INFO', 'App started', { port: RL_PORT });
 
@@ -82,6 +87,12 @@ app.whenReady().then(() => {
     log('INFO', 'Socket status changed', status);
     lastSocketStatus = { status, port: RL_PORT };
     send('socket:status', lastSocketStatus);
+
+    if (status === 'connected' && !setupDone) {
+      setupDone = true;
+      fs.writeFileSync(setupFlagPath, '');
+      send('setup:done', true);
+    }
 
     if (status === 'disconnected' || status === 'error') {
       collector.discardIfActive();
