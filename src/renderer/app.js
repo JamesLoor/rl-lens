@@ -232,6 +232,12 @@ function showHistoryDetail(match) {
 
 historyBack?.addEventListener('click', showHistoryList);
 
+document.getElementById('btn-clear-history')?.addEventListener('click', async () => {
+  await api.clearOldMatches();
+  historyLoaded = false;
+  loadHistory();
+});
+
 // ── Logs ───────────────────────────────────────────────
 function scrollLogsToBottom() {
   if (logOutput) logOutput.scrollTop = logOutput.scrollHeight;

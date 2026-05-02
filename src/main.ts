@@ -141,6 +141,11 @@ app.whenReady().then(() => {
     send('match:state', 'done');
   });
 
+  ipcMain.handle('match:clear-old', () => {
+    db.clearOldMatches();
+    log('INFO', 'Old matches cleared');
+  });
+
   ipcMain.handle('match:history', () => {
     const rows = db.getRawMatches(50);
     const emptyHistory = {
