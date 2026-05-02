@@ -146,13 +146,24 @@ function computeScore(buffer: MatchBuffer): {
   won: boolean | null;
 } {
   const localTeam = buffer.localPlayerTeam;
-  const ownScore = buffer.goals.filter(g => g.teamNum === localTeam).length;
-  const oppScore = buffer.goals.filter(g => g.teamNum !== localTeam).length;
+
+  let ownScore: number;
+  let oppScore: number;
+
+  if (buffer.finalTeamScores.length >= 2) {
+    // Authoritative scores from last UpdateState Game.Teams
+    ownScore = buffer.finalTeamScores.find(t => t.teamNum === localTeam)?.score ?? 0;
+    oppScore = buffer.finalTeamScores.find(t => t.teamNum !== localTeam)?.score ?? 0;
+  } else {
+    // Fallback: count GoalScored events
+    ownScore = buffer.goals.filter(g => g.teamNum === localTeam).length;
+    oppScore = buffer.goals.filter(g => g.teamNum !== localTeam).length;
+  }
 
   let won: boolean | null = null;
   if (buffer.winnerTeamNum !== null) {
     won = buffer.winnerTeamNum === localTeam;
-  } else if (buffer.goals.length > 0) {
+  } else if (ownScore !== oppScore) {
     won = ownScore > oppScore;
   }
 

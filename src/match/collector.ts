@@ -59,6 +59,7 @@ export interface MatchBuffer {
   localPlayerTeam: number;
   playlist: string;
   roundActive: boolean;
+  finalTeamScores: { teamNum: number; score: number }[];
   stateSamples: StateSample[];
   statfeedEvents: StatfeedEntry[];
   goals: GoalEntry[];
@@ -145,6 +146,7 @@ export class MatchCollector extends EventEmitter {
       localPlayerTeam: 0,
       playlist: 'default',
       roundActive: false,
+      finalTeamScores: [],
       stateSamples: [],
       statfeedEvents: [],
       goals: [],
@@ -158,10 +160,16 @@ export class MatchCollector extends EventEmitter {
     if (!this.buffer) return;
     const buf = this.buffer!;
 
-    // Identify local player via Game.Target (camera focus in normal play)
-    if (!buf.localPlayerName && payload.Game.bHasTarget && payload.Game.Target) {
+    // Track local player from camera Target on every non-replay frame.
+    // We don't guard on !localPlayerName so a bad first frame can't get stuck.
+    if (payload.Game.bHasTarget && payload.Game.Target && !payload.Game.bReplay) {
       buf.localPlayerName = payload.Game.Target.Name;
       buf.localPlayerTeam = payload.Game.Target.TeamNum;
+    }
+
+    // Keep authoritative team scores from game state (more reliable than counting GoalScored events)
+    if (payload.Game.Teams?.length > 0) {
+      buf.finalTeamScores = payload.Game.Teams.map(t => ({ teamNum: t.TeamNum, score: t.Score }));
     }
 
     // Detect playlist from arena name + player count (first time only)

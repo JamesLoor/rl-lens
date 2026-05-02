@@ -162,9 +162,18 @@ function renderStatsInto(metaEl, tableEl, result) {
   `;
 }
 
+let reportTimeInterval = null;
+
 function renderReport(result) {
   renderStatsInto(reportMeta, statsTable, result);
   showView('report');
+
+  // Refresh relative time every 30 s so it doesn't go stale
+  if (reportTimeInterval) clearInterval(reportTimeInterval);
+  reportTimeInterval = setInterval(() => {
+    const timeEl = reportMeta?.querySelector('.report-time');
+    if (timeEl) timeEl.textContent = relativeTime(result.playedAt);
+  }, 30_000);
 }
 
 // ── History ────────────────────────────────────────────
