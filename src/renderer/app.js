@@ -205,7 +205,10 @@ async function loadHistory() {
           <span class="result-badge ${badgeClass}">${badgeText}</span>
           ${playlistLabel(match.playlist)} · ${match.ownScore}–${match.oppScore}
         </div>
-        <span class="history-date">${relativeTime(match.playedAt)}</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="history-date">${relativeTime(match.playedAt)}</span>
+          <button class="btn-delete-match" title="Borrar partida">×</button>
+        </div>
       </div>
       <div class="history-item-stats">
         <span>${s.goals}G</span>
@@ -214,6 +217,12 @@ async function loadHistory() {
         <span>${s.demosInflicted}D</span>
       </div>
     `;
+    div.querySelector('.btn-delete-match').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await api.deleteMatch(match.matchNumber);
+      div.remove();
+      if (!historyItems.children.length) historyEmpty.style.display = 'block';
+    });
     div.addEventListener('click', () => showHistoryDetail(match));
     historyItems.appendChild(div);
   });
@@ -232,11 +241,6 @@ function showHistoryDetail(match) {
 
 historyBack?.addEventListener('click', showHistoryList);
 
-document.getElementById('btn-clear-history')?.addEventListener('click', async () => {
-  await api.clearOldMatches();
-  historyLoaded = false;
-  loadHistory();
-});
 
 // ── Logs ───────────────────────────────────────────────
 function scrollLogsToBottom() {

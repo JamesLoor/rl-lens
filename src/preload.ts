@@ -16,8 +16,8 @@ contextBridge.exposeInMainWorld('rlStats', {
   async getMatchHistory(): Promise<unknown[]> {
     return ipcRenderer.invoke('match:history');
   },
-  async clearOldMatches(): Promise<void> {
-    return ipcRenderer.invoke('match:clear-old');
+  async deleteMatch(id: number): Promise<void> {
+    return ipcRenderer.invoke('match:delete', id);
   },
   requestDemo(): void {
     ipcRenderer.send('match:demo');

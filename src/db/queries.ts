@@ -35,7 +35,7 @@ export interface DB {
   insertMatch(result: MatchResult, buffer: MatchBuffer): number;
   getRecentStats(n: number, playlist: string): HistoricalAverages;
   getRawMatches(n: number): RawMatchRow[];
-  clearOldMatches(): void;
+  deleteMatch(id: number): void;
 }
 
 interface MatchRow {
@@ -137,8 +137,8 @@ export function createDB(dbPath: string): DB {
       return Number(info.lastInsertRowid);
     },
 
-    clearOldMatches(): void {
-      db.prepare('DELETE FROM matches WHERE id != (SELECT MAX(id) FROM matches)').run();
+    deleteMatch(id: number): void {
+      db.prepare('DELETE FROM matches WHERE id = ?').run(id);
     },
 
     getRawMatches(n: number): RawMatchRow[] {

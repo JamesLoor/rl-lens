@@ -141,9 +141,9 @@ app.whenReady().then(() => {
     send('match:state', 'done');
   });
 
-  ipcMain.handle('match:clear-old', () => {
-    db.clearOldMatches();
-    log('INFO', 'Old matches cleared');
+  ipcMain.handle('match:delete', (_e, id: number) => {
+    db.deleteMatch(id);
+    log('INFO', 'Match deleted', { id });
   });
 
   ipcMain.handle('match:history', () => {
