@@ -120,11 +120,10 @@ function computeAvgBoost(buffer: MatchBuffer, localName: string | null): number 
 }
 
 function computeSupersonicPct(buffer: MatchBuffer, localName: string | null): number {
-  const vals = pickLocalSamples(buffer, localName)
-    .map(p => p?.bSupersonic)
-    .filter((b): b is boolean => b !== undefined);
-  if (vals.length === 0) return -1;
-  return vals.filter(Boolean).length / vals.length;
+  // bSupersonic is absent (undefined) when false — treat undefined as false
+  const samples = pickLocalSamples(buffer, localName).filter(p => p !== undefined);
+  if (samples.length === 0) return -1;
+  return samples.filter(p => p!.bSupersonic === true).length / samples.length;
 }
 
 function computeDemoGoalCorrelation(buffer: MatchBuffer, localName: string | null): number {
