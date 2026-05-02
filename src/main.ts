@@ -153,8 +153,31 @@ app.whenReady().then(() => {
       .map(r => {
         try {
           const parsed = JSON.parse(r.rawBuffer!);
-          // Fill defaults for fields added after the buffer was saved
           const buffer: MatchBuffer = { finalTeamScores: [], roundActive: false, ...parsed };
+
+          // Old buffers may have localPlayerTeam stuck at 0 from first-frame detection.
+          // Re-derive from player name found in the snapshots.
+          if (buffer.localPlayerName && buffer.stateSamples.length > 0) {
+            const lastSample = buffer.stateSamples.at(-1);
+            const found = lastSample?.players.find(p => p.name === buffer.localPlayerName);
+            if (found) buffer.localPlayerTeam = found.teamNum;
+          }
+
+          // Old buffers may have playlist locked from early frames before all players loaded.
+          // Re-detect from player counts in the final samples of the match.
+          if (!['hoops', 'dropshot', 'snowday'].includes(buffer.playlist)) {
+            const late = buffer.stateSamples.slice(-20);
+            let maxPerTeam = 0;
+            for (const s of late) {
+              const perTeam = new Map<number, number>();
+              for (const p of s.players) perTeam.set(p.teamNum, (perTeam.get(p.teamNum) ?? 0) + 1);
+              if (perTeam.size > 0) maxPerTeam = Math.max(maxPerTeam, ...perTeam.values());
+            }
+            if (maxPerTeam >= 3)      buffer.playlist = 'ranked_standard';
+            else if (maxPerTeam >= 2) buffer.playlist = 'ranked_doubles';
+            else if (maxPerTeam >= 1) buffer.playlist = 'ranked_duels';
+          }
+
           const result = analyzeMatch(buffer, emptyHistory);
           result.matchNumber = r.id;
           return result;
