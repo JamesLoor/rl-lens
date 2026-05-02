@@ -172,32 +172,40 @@ export class MatchCollector extends EventEmitter {
       buf.finalTeamScores = payload.Game.Teams.map(t => ({ teamNum: t.TeamNum, score: t.Score }));
     }
 
-    // Detect playlist from arena name + player count (first time only)
-    if (buf.playlist === 'default' && payload.Players.length > 0) {
+    // Detect playlist from arena name + player count.
+    // Arena-based modes are locked as soon as detected.
+    // Player-count modes only upgrade (duels→doubles→standard) as more players load in.
+    if (payload.Players.length > 0 && !['hoops', 'dropshot', 'snowday'].includes(buf.playlist)) {
       const arenaRaw = payload.Game.Arena ?? '';
       const arena = arenaRaw.toLowerCase();
-      const perTeam = new Map<number, number>();
-      for (const p of payload.Players) {
-        perTeam.set(p.TeamNum, (perTeam.get(p.TeamNum) ?? 0) + 1);
-      }
-      const maxPerTeam = Math.max(...perTeam.values());
 
-      // Modes with unique arena names — detectable regardless of team size
       if (arena.includes('hoops')) {
         buf.playlist = 'hoops';
+        this.emit('playlist_detected', { arena: arenaRaw, playlist: buf.playlist, maxPerTeam: 0 });
       } else if (arena.includes('shattershot')) {
         buf.playlist = 'dropshot';
+        this.emit('playlist_detected', { arena: arenaRaw, playlist: buf.playlist, maxPerTeam: 0 });
       } else if (arena.includes('hockey') || arena.includes('snowday') || arena.includes('farm_night')) {
         buf.playlist = 'snowday';
+        this.emit('playlist_detected', { arena: arenaRaw, playlist: buf.playlist, maxPerTeam: 0 });
       } else {
-        // Standard competitive modes detected by team size
-        // Rumble and Heatseeker use regular arenas — cannot distinguish here
-        if (maxPerTeam === 1) buf.playlist = 'ranked_duels';
-        else if (maxPerTeam === 2) buf.playlist = 'ranked_doubles';
-        else if (maxPerTeam >= 3) buf.playlist = 'ranked_standard';
-      }
+        const perTeam = new Map<number, number>();
+        for (const p of payload.Players) {
+          perTeam.set(p.TeamNum, (perTeam.get(p.TeamNum) ?? 0) + 1);
+        }
+        const maxPerTeam = Math.max(...perTeam.values());
+        const detected =
+          maxPerTeam >= 3 ? 'ranked_standard' :
+          maxPerTeam === 2 ? 'ranked_doubles' : 'ranked_duels';
 
-      this.emit('playlist_detected', { arena: arenaRaw, playlist: buf.playlist, maxPerTeam });
+        const priority: Record<string, number> = {
+          default: 0, ranked_duels: 1, ranked_doubles: 2, ranked_standard: 3,
+        };
+        if ((priority[detected] ?? 0) > (priority[buf.playlist] ?? 0)) {
+          buf.playlist = detected;
+          this.emit('playlist_detected', { arena: arenaRaw, playlist: buf.playlist, maxPerTeam });
+        }
+      }
     }
 
     // Fallback: emit round:active on first UpdateState with positive game time

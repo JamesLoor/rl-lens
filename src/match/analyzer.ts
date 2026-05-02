@@ -147,15 +147,20 @@ function computeScore(buffer: MatchBuffer): {
 } {
   const localTeam = buffer.localPlayerTeam;
 
-  let ownScore: number;
-  let oppScore: number;
+  // Game.Teams[x].Score is a performance metric, not goal count.
+  // Sum individual player goals by team from the final UpdateState instead.
+  let ownScore = 0;
+  let oppScore = 0;
 
-  if (buffer.finalTeamScores.length >= 2) {
-    // Authoritative scores from last UpdateState Game.Teams
-    ownScore = buffer.finalTeamScores.find(t => t.teamNum === localTeam)?.score ?? 0;
-    oppScore = buffer.finalTeamScores.find(t => t.teamNum !== localTeam)?.score ?? 0;
+  const lastSample = buffer.stateSamples.at(-1);
+  if (lastSample && lastSample.players.length > 0) {
+    ownScore = lastSample.players
+      .filter(p => p.teamNum === localTeam)
+      .reduce((sum, p) => sum + p.goals, 0);
+    oppScore = lastSample.players
+      .filter(p => p.teamNum !== localTeam)
+      .reduce((sum, p) => sum + p.goals, 0);
   } else {
-    // Fallback: count GoalScored events
     ownScore = buffer.goals.filter(g => g.teamNum === localTeam).length;
     oppScore = buffer.goals.filter(g => g.teamNum !== localTeam).length;
   }
