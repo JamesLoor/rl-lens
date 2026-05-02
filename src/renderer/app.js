@@ -195,6 +195,7 @@ async function loadHistory() {
     const won = match.won;
     const badgeClass = won === true ? 'win' : won === false ? 'loss' : 'draw';
     const badgeText  = won === true ? 'V' : won === false ? 'D' : '—';
+    const s = match.stats;
 
     const div = document.createElement('div');
     div.className = 'history-item';
@@ -207,10 +208,10 @@ async function loadHistory() {
         <span class="history-date">${relativeTime(match.playedAt)}</span>
       </div>
       <div class="history-item-stats">
-        <span>${match.goals}G</span>
-        <span>${match.shots}T</span>
-        <span>${match.saves}Sv</span>
-        <span>${match.demosInflicted}D</span>
+        <span>${s.goals}G</span>
+        <span>${s.shots}T</span>
+        <span>${s.saves}Sv</span>
+        <span>${s.demosInflicted}D</span>
       </div>
     `;
     div.addEventListener('click', () => showHistoryDetail(match));
@@ -226,27 +227,7 @@ function showHistoryList() {
 function showHistoryDetail(match) {
   if (historyListPanel)   historyListPanel.style.display = 'none';
   if (historyDetailPanel) historyDetailPanel.classList.add('active');
-
-  const fakeResult = {
-    won: match.won,
-    matchNumber: match.id,
-    playlist: match.playlist,
-    ownScore: match.ownScore,
-    oppScore: match.oppScore,
-    playedAt: match.playedAt,
-    baselines: match.baselines,
-    stats: {
-      goals:             match.goals,
-      shots:             match.shots,
-      saves:             match.saves,
-      assists:           match.assists,
-      demosInflicted:    match.demosInflicted,
-      avgBoost:          match.avgBoost,
-      boostStarvationPct: match.boostStarvationPct,
-      supersonicPct:     match.supersonicPct,
-    },
-  };
-  renderStatsInto(historyDetailMeta, historyDetailStats, fakeResult);
+  renderStatsInto(historyDetailMeta, historyDetailStats, match);
 }
 
 historyBack?.addEventListener('click', showHistoryList);

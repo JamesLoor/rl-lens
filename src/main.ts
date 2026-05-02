@@ -5,8 +5,7 @@ import { RLSocketClient, SocketStatus } from './socket/client';
 import { MatchCollector } from './match/collector';
 import { analyzeMatch, buildDemoResult, MatchResult } from './match/analyzer';
 import { createDB } from './db/queries';
-import baselinesJson from './insights/baselines.json';
-import type { Baselines } from './insights/rules';
+import type { MatchBuffer } from './match/collector';
 
 const RL_PORT = 49123;
 
@@ -143,12 +142,28 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle('match:history', () => {
-    const rows = db.getMatchHistory(50);
-    const allBaselines = baselinesJson as Record<string, Baselines>;
-    return rows.map(row => ({
-      ...row,
-      baselines: allBaselines[row.playlist] ?? allBaselines['default'],
-    }));
+    const rows = db.getRawMatches(50);
+    const emptyHistory = {
+      avgShootingPct: null, avgBoostStarvation: null,
+      avgTouchesPerMin: null, avgSaves: null,
+      matchCount: 0, bestShootingPct: null,
+    };
+    return rows
+      .filter(r => r.rawBuffer != null)
+      .map(r => {
+        try {
+          const parsed = JSON.parse(r.rawBuffer!);
+          // Fill defaults for fields added after the buffer was saved
+          const buffer: MatchBuffer = { finalTeamScores: [], roundActive: false, ...parsed };
+          const result = analyzeMatch(buffer, emptyHistory);
+          result.matchNumber = r.id;
+          return result;
+        } catch (err) {
+          log('WARN', 'Failed to re-analyze match', { id: r.id, err });
+          return null;
+        }
+      })
+      .filter(r => r !== null);
   });
 
   ipcMain.on('setup:run', () => {
