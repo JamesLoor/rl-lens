@@ -25,9 +25,28 @@ CREATE TABLE IF NOT EXISTS matches (
 );
 `;
 
+export interface MatchSummary {
+  id: number;
+  playlist: string;
+  won: boolean | null;
+  ownScore: number;
+  oppScore: number;
+  durationSeconds: number;
+  playedAt: number;
+  shots: number;
+  goals: number;
+  saves: number;
+  assists: number;
+  demosInflicted: number;
+  avgBoost: number;
+  boostStarvationPct: number;
+  supersonicPct: number;
+}
+
 export interface DB {
   insertMatch(result: MatchResult, buffer: MatchBuffer): number;
   getRecentStats(n: number, playlist: string): HistoricalAverages;
+  getMatchHistory(n: number): MatchSummary[];
 }
 
 interface MatchRow {
@@ -37,6 +56,24 @@ interface MatchRow {
   touches: number;
   duration_seconds: number;
   boost_starvation_pct: number;
+}
+
+interface HistoryRow {
+  id: number;
+  playlist: string;
+  won: number | null;
+  own_score: number;
+  opp_score: number;
+  duration_seconds: number;
+  played_at: number;
+  shots: number;
+  goals: number;
+  saves: number;
+  assists: number;
+  demos_inflicted: number;
+  avg_boost: number;
+  boost_starvation_pct: number;
+  supersonic_pct: number;
 }
 
 // Keep 1 sample per 200ms (5Hz) — enough to accurately capture short events
@@ -91,6 +128,17 @@ export function createDB(dbPath: string): DB {
     LIMIT ?
   `);
 
+  const historyStmt = db.prepare<[number], HistoryRow>(`
+    SELECT id, playlist, won, own_score, opp_score, duration_seconds, played_at,
+           shots, goals, saves, assists, demos_inflicted,
+           COALESCE(avg_boost, -1) as avg_boost,
+           boost_starvation_pct,
+           COALESCE(supersonic_pct, -1) as supersonic_pct
+    FROM matches
+    ORDER BY played_at DESC
+    LIMIT ?
+  `);
+
   return {
     insertMatch(result: MatchResult, buffer: MatchBuffer): number {
       const subsampled: MatchBuffer = {
@@ -119,6 +167,26 @@ export function createDB(dbPath: string): DB {
         raw_buffer: JSON.stringify(subsampled),
       });
       return Number(info.lastInsertRowid);
+    },
+
+    getMatchHistory(n: number): MatchSummary[] {
+      return historyStmt.all(n).map(r => ({
+        id: r.id,
+        playlist: r.playlist,
+        won: r.won === null ? null : r.won === 1,
+        ownScore: r.own_score,
+        oppScore: r.opp_score,
+        durationSeconds: r.duration_seconds,
+        playedAt: r.played_at,
+        shots: r.shots,
+        goals: r.goals,
+        saves: r.saves,
+        assists: r.assists,
+        demosInflicted: r.demos_inflicted,
+        avgBoost: r.avg_boost,
+        boostStarvationPct: r.boost_starvation_pct,
+        supersonicPct: r.supersonic_pct,
+      }));
     },
 
     getRecentStats(n: number, playlist: string): HistoricalAverages {

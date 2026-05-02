@@ -10,6 +10,12 @@ contextBridge.exposeInMainWorld('rlStats', {
   onMatchResult(cb: (result: unknown) => void): void {
     ipcRenderer.on('match:result', (_e, result) => cb(result));
   },
+  onLogLine(cb: (line: string) => void): void {
+    ipcRenderer.on('log:line', (_e, line) => cb(line));
+  },
+  async getMatchHistory(): Promise<unknown[]> {
+    return ipcRenderer.invoke('match:history');
+  },
   requestDemo(): void {
     ipcRenderer.send('match:demo');
   },

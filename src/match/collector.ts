@@ -58,6 +58,7 @@ export interface MatchBuffer {
   localPlayerName: string | null;
   localPlayerTeam: number;
   playlist: string;
+  roundActive: boolean;
   stateSamples: StateSample[];
   statfeedEvents: StatfeedEntry[];
   goals: GoalEntry[];
@@ -114,6 +115,14 @@ export class MatchCollector extends EventEmitter {
         this._handleMatchEnd(event.Data as MatchEndedPayload);
         break;
 
+      case 'CountdownBegin':
+      case 'RoundStarted':
+        if (this.buffer && !this.buffer.roundActive) {
+          this.buffer.roundActive = true;
+          this.emit('round:active');
+        }
+        break;
+
       case 'MatchDestroyed':
         this.discardIfActive();
         break;
@@ -135,6 +144,7 @@ export class MatchCollector extends EventEmitter {
       localPlayerName: null,
       localPlayerTeam: 0,
       playlist: 'default',
+      roundActive: false,
       stateSamples: [],
       statfeedEvents: [],
       goals: [],
@@ -180,6 +190,12 @@ export class MatchCollector extends EventEmitter {
       }
 
       this.emit('playlist_detected', { arena: arenaRaw, playlist: buf.playlist, maxPerTeam });
+    }
+
+    // Fallback: emit round:active on first UpdateState with positive game time
+    if (!buf.roundActive && payload.Game.TimeSeconds > 0) {
+      buf.roundActive = true;
+      this.emit('round:active');
     }
 
     const sample: StateSample = {

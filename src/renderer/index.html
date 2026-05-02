@@ -17,61 +17,101 @@
     </div>
   </header>
 
-  <main id="main-content">
+  <!-- Tab: inicio (estado actual + reporte) -->
+  <div id="tab-home" class="tab-panel active">
+    <main id="main-content">
 
-    <!-- View: onboarding / disconnected -->
-    <div id="view-onboarding" class="view active">
-      <div class="onboarding-icon">🎮</div>
-      <h2>Activá la Stats API</h2>
-      <p class="muted">RL Insights necesita que Rocket League tenga la Stats API local habilitada.</p>
+      <div id="view-onboarding" class="view active">
+        <div class="onboarding-icon">🎮</div>
+        <h2>Activá la Stats API</h2>
+        <p class="muted">RL Insights necesita que Rocket League tenga la Stats API local habilitada.</p>
 
-      <div class="steps">
-        <div class="step">
-          <span class="step-num">1</span>
-          <div>
-            <strong>Configurá la Stats API</strong>
-            <button class="btn-setup" id="btn-setup">Ejecutar setup-rl-api.bat →</button>
+        <div class="steps">
+          <div class="step">
+            <span class="step-num">1</span>
+            <div>
+              <strong>Configurá la Stats API</strong>
+              <button class="btn-setup" id="btn-setup">Ejecutar setup-rl-api.bat →</button>
+            </div>
+          </div>
+          <div class="step">
+            <span class="step-num">2</span>
+            <div>
+              <strong>Reiniciá Rocket League</strong>
+            </div>
           </div>
         </div>
-        <div class="step">
-          <span class="step-num">2</span>
-          <div>
-            <strong>Reiniciá Rocket League</strong>
+
+        <button class="btn-demo" id="btn-demo">Ver modo demo →</button>
+      </div>
+
+      <div id="view-listening" class="view">
+        <div class="view-center">
+          <div class="pulse-wrap">
+            <div class="pulse-ring"></div>
+            <div class="pulse-core"></div>
           </div>
+          <h2>Escuchando...</h2>
+          <p class="muted">Empezá una partida en Rocket League</p>
         </div>
       </div>
 
-      <button class="btn-demo" id="btn-demo">Ver modo demo →</button>
-    </div>
-
-    <!-- View: connected, waiting for match -->
-    <div id="view-listening" class="view">
-      <div class="view-center">
-        <div class="pulse-wrap">
-          <div class="pulse-ring"></div>
-          <div class="pulse-core"></div>
+      <div id="view-capturing" class="view">
+        <div class="view-center">
+          <div class="capture-icon">⚡</div>
+          <h2>Capturando partida</h2>
+          <p class="muted">El análisis aparecerá al terminar</p>
         </div>
-        <h2>Escuchando...</h2>
-        <p class="muted">Empezá una partida en Rocket League</p>
+      </div>
+
+      <div id="view-report" class="view">
+        <div class="report-meta" id="report-meta"></div>
+        <div id="stats-table"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Tab: historial -->
+  <div id="tab-history" class="tab-panel">
+
+    <div id="history-list-panel" class="tab-scroll">
+      <div id="history-items"></div>
+      <p id="history-empty" class="muted history-empty-msg">No hay partidas guardadas aún.</p>
+    </div>
+
+    <div id="history-detail-panel" class="history-detail-panel">
+      <div class="history-detail-bar">
+        <button id="history-back" class="btn-back">← Volver</button>
+      </div>
+      <div class="tab-scroll">
+        <div class="report-meta" id="history-detail-meta"></div>
+        <div id="history-detail-stats"></div>
       </div>
     </div>
 
-    <!-- View: match active, capturing -->
-    <div id="view-capturing" class="view">
-      <div class="view-center">
-        <div class="capture-icon">⚡</div>
-        <h2>Capturando partida</h2>
-        <p class="muted">El análisis aparecerá al terminar</p>
-      </div>
-    </div>
+  </div>
 
-    <!-- View: post-match report -->
-    <div id="view-report" class="view">
-      <div class="report-meta" id="report-meta"></div>
-      <div id="stats-table"></div>
-    </div>
+  <!-- Tab: logs -->
+  <div id="tab-logs" class="tab-panel">
+    <div id="log-output" class="tab-scroll log-output"></div>
+  </div>
 
-  </main>
+  <!-- Tab bar -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="home">
+      <span class="tab-icon">◉</span>
+      <span class="tab-label">Inicio</span>
+    </button>
+    <button class="tab-btn" data-tab="history">
+      <span class="tab-icon">≡</span>
+      <span class="tab-label">Historial</span>
+    </button>
+    <button class="tab-btn" data-tab="logs">
+      <span class="tab-icon">▸</span>
+      <span class="tab-label">Logs</span>
+    </button>
+  </nav>
 
   <script src="app.js"></script>
 </body>

@@ -5,6 +5,8 @@ import { RLSocketClient, SocketStatus } from './socket/client';
 import { MatchCollector } from './match/collector';
 import { analyzeMatch, buildDemoResult, MatchResult } from './match/analyzer';
 import { createDB } from './db/queries';
+import baselinesJson from './insights/baselines.json';
+import type { Baselines } from './insights/rules';
 
 const RL_PORT = 49123;
 
@@ -12,6 +14,8 @@ let mainWindow: BrowserWindow | null = null;
 let logFile: string | null = null;
 let lastResult: MatchResult | null = null;
 let lastSocketStatus: { status: SocketStatus; port: number } | null = null;
+const logBuffer: string[] = [];
+const LOG_BUFFER_SIZE = 400;
 
 function initLog(userData: string): void {
   const logDir = path.join(userData, 'logs');
@@ -22,8 +26,12 @@ function initLog(userData: string): void {
 
 function log(level: 'INFO' | 'WARN' | 'ERROR', msg: string, data?: unknown): void {
   const line = `${new Date().toISOString()} [${level}] ${msg}${data !== undefined ? ' ' + JSON.stringify(data) : ''}\n`;
+  const trimmed = line.trimEnd();
+  logBuffer.push(trimmed);
+  if (logBuffer.length > LOG_BUFFER_SIZE) logBuffer.shift();
   if (logFile) fs.appendFileSync(logFile, line);
-  console.log(line.trimEnd());
+  console.log(trimmed);
+  mainWindow?.webContents.send('log:line', trimmed);
 }
 
 function send(channel: string, data: unknown): void {
@@ -52,6 +60,7 @@ function createWindow(): void {
   mainWindow.webContents.on('did-finish-load', () => {
     if (lastSocketStatus) send('socket:status', lastSocketStatus);
     if (lastResult) send('match:result', lastResult);
+    for (const line of logBuffer) send('log:line', line);
   });
 
   mainWindow.on('closed', () => {
@@ -94,8 +103,13 @@ app.whenReady().then(() => {
   });
 
   collector.on('match:start', () => {
-    log('INFO', 'Match started — capturing');
-    send('match:state', 'capturing');
+    log('INFO', 'Match created — loading');
+    send('match:state', 'loading');
+  });
+
+  collector.on('round:active', () => {
+    log('INFO', 'Round active — match underway');
+    send('match:state', 'active');
   });
 
   collector.on('match:end', (buffer) => {
@@ -126,6 +140,15 @@ app.whenReady().then(() => {
     const demo = buildDemoResult();
     send('match:result', demo);
     send('match:state', 'done');
+  });
+
+  ipcMain.handle('match:history', () => {
+    const rows = db.getMatchHistory(50);
+    const allBaselines = baselinesJson as Record<string, Baselines>;
+    return rows.map(row => ({
+      ...row,
+      baselines: allBaselines[row.playlist] ?? allBaselines['default'],
+    }));
   });
 
   ipcMain.on('setup:run', () => {
